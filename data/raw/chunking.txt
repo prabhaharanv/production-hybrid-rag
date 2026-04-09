@@ -1,0 +1,4 @@
+Chunking is the process of splitting documents into smaller pieces for retrieval.
+Good chunking improves retrieval precision and preserves semantic meaning.
+Common chunking methods include fixed-size chunking, recursive chunking, and structure-aware chunking.
+Chunk overlap helps preserve context between adjacent chunks.
