@@ -7,9 +7,12 @@ Baseline RAG system: ingest documents, chunk, embed, index, and answer questions
 - Document ingestion (`.txt`, `.md`)
 - Character-level chunking with overlap
 - Sentence-transformer embeddings (`all-MiniLM-L6-v2`)
-- FAISS vector search
+- FAISS dense vector search
+- BM25 sparse keyword retrieval
+- Hybrid retrieval with Reciprocal Rank Fusion (RRF)
+- Source citations with bracket notation `[1]`, `[2]` in answers
 - LLM answer generation (OpenAI or Ollama)
-- FastAPI `/ask` endpoint with retrieved context
+- FastAPI `/ask` endpoint with retrieved context and structured citations
 
 ## Project Structure
 
@@ -24,8 +27,9 @@ production-hybrid-rag/
 │   ├── chunking.py     # Text chunking with overlap
 │   ├── embeddings.py   # Sentence-transformer wrapper
 │   ├── vector_store.py # FAISS index save/load/search
-│   ├── retriever.py    # Retrieval from vector store
-│   ├── prompting.py    # RAG prompt construction
+│   ├── bm25_retriever.py # BM25 sparse index and search
+│   ├── retriever.py    # Dense, Sparse, and Hybrid retrievers with RRF
+│   ├── prompting.py    # RAG prompt with citation instructions
 │   ├── generator.py    # LLM generation (OpenAI-compatible)
 │   ├── pipeline.py     # Retriever → Generator pipeline
 │   └── ingest.py       # End-to-end ingestion orchestration
@@ -87,6 +91,13 @@ Response:
 {
   "question": "What is RAG?",
   "answer": "...",
+  "citations": [
+    {
+      "reference": 1,
+      "title": "rag_intro.txt",
+      "source": "data/raw/rag_intro.txt"
+    }
+  ],
   "retrieved_chunks": [
     {
       "chunk_id": "...",
@@ -109,10 +120,25 @@ curl http://127.0.0.1:8000/health
 
 ## Roadmap
 
-- [ ] BM25 + hybrid fusion retrieval
-- [ ] Metadata filtering and citations
-- [ ] Reranker and query rewriting
+### Week 1 — Baseline RAG
+- [x] Document ingestion, chunking, embedding
+- [x] FAISS vector store and dense retrieval
+- [x] LLM generation with OpenAI/Ollama
+- [x] FastAPI `/ask` endpoint
+
+### Week 2 — Hybrid Retrieval & Citations
+- [x] BM25 sparse retrieval (`rank-bm25`)
+- [x] Hybrid retrieval with Reciprocal Rank Fusion (RRF)
+- [x] Source citations with bracket notation in LLM answers
+- [x] Improved context formatting in prompts
+
+### Week 3 — Quality Improvements
+- [ ] Cross-encoder reranker
+- [ ] Query rewriting
+- [ ] Better prompts
 - [ ] Answer abstention (refuse when context is insufficient)
+
+### Future
 - [ ] Evaluation dataset and benchmarks
 - [ ] Tests and CI
 - [ ] Docker
