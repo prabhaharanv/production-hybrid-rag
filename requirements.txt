@@ -7,3 +7,4 @@ faiss-cpu
 numpy
 openai
 tqdm
+rank-bm25

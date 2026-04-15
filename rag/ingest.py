@@ -2,6 +2,7 @@ from rag.loader import load_documents
 from rag.chunking import chunk_documents
 from rag.embeddings import SentenceTransformerEmbedder
 from rag.vector_store import FaissVectorStore
+from rag.bm25_retriever import BM25Store
 
 
 def run_ingestion(
@@ -24,6 +25,9 @@ def run_ingestion(
     vector_store = FaissVectorStore(dim=vectors.shape[1])
     vector_store.add(vectors, chunks)
     vector_store.save(index_dir)
+
+    bm25_store = BM25Store(records=chunks)
+    bm25_store.save(index_dir)
 
     return {
         "num_documents": len(documents),

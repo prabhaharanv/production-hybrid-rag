@@ -17,7 +17,14 @@ class RetrievedChunk(BaseModel):
     metadata: Dict[str, Any] = {}
 
 
+class Citation(BaseModel):
+    reference: int
+    title: str
+    source: str
+
+
 class AskResponse(BaseModel):
     question: str
     answer: str
+    citations: List[Citation]
     retrieved_chunks: List[RetrievedChunk]

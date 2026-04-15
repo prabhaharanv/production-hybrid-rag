@@ -16,6 +16,7 @@ class Settings(BaseModel):
     chunk_size: int = int(os.getenv("CHUNK_SIZE", "400"))
     chunk_overlap: int = int(os.getenv("CHUNK_OVERLAP", "60"))
     top_k: int = int(os.getenv("TOP_K", "5"))
+    rrf_k: int = int(os.getenv("RRF_K", "60"))
 
 
 settings = Settings()

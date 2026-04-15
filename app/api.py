@@ -3,11 +3,12 @@ from app.config import settings
 from app.schemas import AskRequest, AskResponse
 from rag.embeddings import SentenceTransformerEmbedder
 from rag.vector_store import FaissVectorStore
-from rag.retriever import Retriever
+from rag.bm25_retriever import BM25Store
+from rag.retriever import DenseRetriever, SparseRetriever, HybridRetriever
 from rag.generator import LLMGenerator
 from rag.pipeline import RAGPipeline
 
-app = FastAPI(title="Baseline RAG API", version="0.1.0")
+app = FastAPI(title="Hybrid RAG API", version="0.2.0")
 
 pipeline: RAGPipeline | None = None
 
@@ -19,7 +20,11 @@ def startup_event():
     try:
         embedder = SentenceTransformerEmbedder(settings.embedding_model)
         vector_store = FaissVectorStore.load(settings.index_dir)
-        retriever = Retriever(embedder=embedder, vector_store=vector_store)
+        bm25_store = BM25Store.load(settings.index_dir)
+
+        dense = DenseRetriever(embedder=embedder, vector_store=vector_store)
+        sparse = SparseRetriever(bm25_store=bm25_store)
+        retriever = HybridRetriever(dense=dense, sparse=sparse, rrf_k=settings.rrf_k)
 
         if not settings.openai_api_key:
             raise ValueError("OPENAI_API_KEY is missing")

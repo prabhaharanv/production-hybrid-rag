@@ -2,29 +2,40 @@ def build_rag_prompt(question: str, retrieved_chunks: list[dict]) -> str:
     context_blocks = []
 
     for i, chunk in enumerate(retrieved_chunks, start=1):
+        source_label = chunk.get("title", "Unknown")
         block = (
-            f"[Chunk {i}]\n"
-            f"Title: {chunk['title']}\n"
-            f"Source: {chunk['source']}\n"
-            f"Text: {chunk['text']}"
+            f"[{i}] \"{source_label}\"\n"
+            f"    Source: {chunk.get('source', 'N/A')}\n"
+            f"    ---\n"
+            f"    {chunk['text']}"
         )
         context_blocks.append(block)
 
     context = "\n\n".join(context_blocks)
 
-    return f"""You are a helpful assistant answering questions using only the retrieved context.
+    source_list = ", ".join(
+        f"[{i}] {chunk.get('title', 'Unknown')}"
+        for i, chunk in enumerate(retrieved_chunks, start=1)
+    )
+
+    return f"""You are a helpful assistant answering questions using only the retrieved context below.
 
 Rules:
-- Use only the context below.
-- If the answer is not supported by the context, say that you do not have enough information.
-- Be concise but accurate.
-- When relevant, mention the source title.
+- Use ONLY the information in the provided context passages.
+- Cite sources using bracket notation [1], [2], etc. corresponding to the passage numbers.
+- If multiple passages support a statement, cite all of them, e.g. [1][3].
+- If the context does not contain enough information, say so explicitly.
+- Be concise but thorough.
+- End your answer with a "Sources:" section listing the cited passage numbers and titles.
 
-Question:
-{question}
+Available sources: {source_list}
 
-Retrieved Context:
+---
+Context:
 {context}
+---
+
+Question: {question}
 
 Answer:
 """
