@@ -25,6 +25,8 @@ class Citation(BaseModel):
 
 class AskResponse(BaseModel):
     question: str
+    rewritten_query: str
     answer: str
+    abstained: bool
     citations: List[Citation]
     retrieved_chunks: List[RetrievedChunk]

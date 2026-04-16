@@ -17,6 +17,9 @@ class Settings(BaseModel):
     chunk_overlap: int = int(os.getenv("CHUNK_OVERLAP", "60"))
     top_k: int = int(os.getenv("TOP_K", "5"))
     rrf_k: int = int(os.getenv("RRF_K", "60"))
+    reranker_model: str = os.getenv("RERANKER_MODEL", "cross-encoder/ms-marco-MiniLM-L-6-v2")
+    enable_reranker: bool = os.getenv("ENABLE_RERANKER", "true").lower() == "true"
+    enable_query_rewriting: bool = os.getenv("ENABLE_QUERY_REWRITING", "true").lower() == "true"
 
 
 settings = Settings()

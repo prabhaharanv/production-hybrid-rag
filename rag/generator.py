@@ -12,7 +12,12 @@ class LLMGenerator:
             messages=[
                 {
                     "role": "system",
-                    "content": "You answer using retrieved context only.",
+                    "content": (
+                        "You are a precise question-answering assistant. "
+                        "You answer ONLY using the retrieved context provided. "
+                        "You NEVER fabricate information. "
+                        "If the context is insufficient, respond with exactly INSUFFICIENT_CONTEXT."
+                    ),
                 },
                 {
                     "role": "user",

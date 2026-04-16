@@ -1,3 +1,6 @@
+ABSTENTION_PHRASE = "INSUFFICIENT_CONTEXT"
+
+
 def build_rag_prompt(question: str, retrieved_chunks: list[dict]) -> str:
     context_blocks = []
 
@@ -24,7 +27,8 @@ Rules:
 - Use ONLY the information in the provided context passages.
 - Cite sources using bracket notation [1], [2], etc. corresponding to the passage numbers.
 - If multiple passages support a statement, cite all of them, e.g. [1][3].
-- If the context does not contain enough information, say so explicitly.
+- If the context does NOT contain enough information to answer the question, respond with EXACTLY the phrase "{ABSTENTION_PHRASE}" and nothing else.
+- Do NOT guess, speculate, or use knowledge outside the provided context.
 - Be concise but thorough.
 - End your answer with a "Sources:" section listing the cited passage numbers and titles.
 

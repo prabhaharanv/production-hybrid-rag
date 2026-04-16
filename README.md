@@ -10,7 +10,10 @@ Baseline RAG system: ingest documents, chunk, embed, index, and answer questions
 - FAISS dense vector search
 - BM25 sparse keyword retrieval
 - Hybrid retrieval with Reciprocal Rank Fusion (RRF)
+- Cross-encoder reranking (`ms-marco-MiniLM-L-6-v2`)
+- Query rewriting for better retrieval
 - Source citations with bracket notation `[1]`, `[2]` in answers
+- Answer abstention when context is insufficient
 - LLM answer generation (OpenAI or Ollama)
 - FastAPI `/ask` endpoint with retrieved context and structured citations
 
@@ -29,9 +32,11 @@ production-hybrid-rag/
 │   ├── vector_store.py # FAISS index save/load/search
 │   ├── bm25_retriever.py # BM25 sparse index and search
 │   ├── retriever.py    # Dense, Sparse, and Hybrid retrievers with RRF
-│   ├── prompting.py    # RAG prompt with citation instructions
+│   ├── reranker.py     # Cross-encoder reranker
+│   ├── query_rewriter.py # LLM-based query rewriting
+│   ├── prompting.py    # RAG prompt with citation and abstention instructions
 │   ├── generator.py    # LLM generation (OpenAI-compatible)
-│   ├── pipeline.py     # Retriever → Generator pipeline
+│   ├── pipeline.py     # Rewrite → Retrieve → Rerank → Generate pipeline
 │   └── ingest.py       # End-to-end ingestion orchestration
 ├── scripts/
 │   └── ingest_docs.py  # CLI ingestion entry point
@@ -90,7 +95,9 @@ Response:
 ```json
 {
   "question": "What is RAG?",
+  "rewritten_query": "What is Retrieval-Augmented Generation RAG and how does it work?",
   "answer": "...",
+  "abstained": false,
   "citations": [
     {
       "reference": 1,
@@ -133,10 +140,10 @@ curl http://127.0.0.1:8000/health
 - [x] Improved context formatting in prompts
 
 ### Week 3 — Quality Improvements
-- [ ] Cross-encoder reranker
-- [ ] Query rewriting
-- [ ] Better prompts
-- [ ] Answer abstention (refuse when context is insufficient)
+- [x] Cross-encoder reranker
+- [x] Query rewriting
+- [x] Better prompts
+- [x] Answer abstention (refuse when context is insufficient)
 
 ### Future
 - [ ] Evaluation dataset and benchmarks

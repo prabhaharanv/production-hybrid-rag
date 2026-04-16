@@ -5,10 +5,12 @@ from rag.embeddings import SentenceTransformerEmbedder
 from rag.vector_store import FaissVectorStore
 from rag.bm25_retriever import BM25Store
 from rag.retriever import DenseRetriever, SparseRetriever, HybridRetriever
+from rag.reranker import Reranker
+from rag.query_rewriter import QueryRewriter
 from rag.generator import LLMGenerator
 from rag.pipeline import RAGPipeline
 
-app = FastAPI(title="Hybrid RAG API", version="0.2.0")
+app = FastAPI(title="Hybrid RAG API", version="0.3.0")
 
 pipeline: RAGPipeline | None = None
 
@@ -35,7 +37,24 @@ def startup_event():
             base_url=settings.openai_base_url,
         )
 
-        pipeline = RAGPipeline(retriever=retriever, generator=generator)
+        reranker = Reranker(settings.reranker_model) if settings.enable_reranker else None
+
+        query_rewriter = (
+            QueryRewriter(
+                model=settings.llm_model,
+                api_key=settings.openai_api_key,
+                base_url=settings.openai_base_url,
+            )
+            if settings.enable_query_rewriting
+            else None
+        )
+
+        pipeline = RAGPipeline(
+            retriever=retriever,
+            generator=generator,
+            reranker=reranker,
+            query_rewriter=query_rewriter,
+        )
     except Exception as e:
         print(f"Startup failed: {e}")
         pipeline = None

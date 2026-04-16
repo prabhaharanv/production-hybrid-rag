@@ -24,15 +24,11 @@ def reciprocal_rank_fusion(
     chunk_map: dict[str, dict] = {}
 
     for results in result_lists:
-        print(f"results oin rrf: {results}")
         for rank, item in enumerate(results):
-            print(f"rank: {rank}, item: {item}")
             cid = item["chunk_id"]
             fused_scores[cid] = fused_scores.get(cid, 0.0) + 1.0 / (k + rank + 1)
-            print(f"fused_scores: {fused_scores}")
             if cid not in chunk_map:
                 chunk_map[cid] = {key: val for key, val in item.items() if key != "score"}
-                print(f"chunk_map: {chunk_map}")
 
     ranked = sorted(fused_scores.items(), key=lambda x: x[1], reverse=True)
     return [{**chunk_map[cid], "score": score} for cid, score in ranked]
