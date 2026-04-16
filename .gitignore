@@ -23,6 +23,7 @@ env/
 # Data (generated artifacts)
 data/index/
 data/processed/
+eval/results.json
 
 # OS
 .DS_Store

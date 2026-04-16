@@ -1,0 +1,72 @@
+[
+  {
+    "id": "eval_001",
+    "question": "What is RAG?",
+    "expected_keywords": ["retrieval", "generation", "context", "knowledge base"],
+    "expected_source": "rag_intro.txt",
+    "should_abstain": false
+  },
+  {
+    "id": "eval_002",
+    "question": "How does RAG reduce hallucinations?",
+    "expected_keywords": ["retrieval", "grounded", "context", "external"],
+    "expected_source": "rag_intro.txt",
+    "should_abstain": false
+  },
+  {
+    "id": "eval_003",
+    "question": "What is chunking?",
+    "expected_keywords": ["splitting", "documents", "smaller", "retrieval"],
+    "expected_source": "chunking.txt",
+    "should_abstain": false
+  },
+  {
+    "id": "eval_004",
+    "question": "What are common chunking methods?",
+    "expected_keywords": ["fixed-size", "recursive", "structure-aware"],
+    "expected_source": "chunking.txt",
+    "should_abstain": false
+  },
+  {
+    "id": "eval_005",
+    "question": "Why is chunk overlap important?",
+    "expected_keywords": ["context", "overlap", "adjacent", "preserve"],
+    "expected_source": "chunking.txt",
+    "should_abstain": false
+  },
+  {
+    "id": "eval_006",
+    "question": "What role does the retriever play in RAG?",
+    "expected_keywords": ["retriever", "context", "knowledge base", "fetches"],
+    "expected_source": "rag_intro.txt",
+    "should_abstain": false
+  },
+  {
+    "id": "eval_007",
+    "question": "What role does the generator play in RAG?",
+    "expected_keywords": ["generator", "answer", "grounded", "context"],
+    "expected_source": "rag_intro.txt",
+    "should_abstain": false
+  },
+  {
+    "id": "eval_008",
+    "question": "What is the capital of France?",
+    "expected_keywords": [],
+    "expected_source": null,
+    "should_abstain": true
+  },
+  {
+    "id": "eval_009",
+    "question": "Explain quantum computing",
+    "expected_keywords": [],
+    "expected_source": null,
+    "should_abstain": true
+  },
+  {
+    "id": "eval_010",
+    "question": "How does chunking improve retrieval precision?",
+    "expected_keywords": ["chunking", "precision", "semantic", "smaller"],
+    "expected_source": "chunking.txt",
+    "should_abstain": false
+  }
+]

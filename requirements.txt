@@ -9,3 +9,4 @@ openai
 tqdm
 rank-bm25
 cross-encoder
+pytest

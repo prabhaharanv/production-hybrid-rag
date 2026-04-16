@@ -37,9 +37,7 @@ class BM25Store:
         for idx, score in ranked:
             if score <= 0:
                 break
-            print(f"results before: {results}")
             results.append({**self.records[idx], "score": float(score)})
-            print(f"results after: {results}")
 
         return results
 
