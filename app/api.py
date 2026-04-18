@@ -1,4 +1,12 @@
-from fastapi import FastAPI, HTTPException
+from contextlib import asynccontextmanager
+
+from fastapi import FastAPI, HTTPException, Request, Security, Depends
+from fastapi.security import APIKeyHeader
+from slowapi import Limiter
+from slowapi.util import get_remote_address
+from slowapi.errors import RateLimitExceeded
+from starlette.responses import JSONResponse
+
 from app.config import settings
 from app.schemas import AskRequest, AskResponse
 from rag.embeddings import SentenceTransformerEmbedder
@@ -10,13 +18,29 @@ from rag.query_rewriter import QueryRewriter
 from rag.generator import LLMGenerator
 from rag.pipeline import RAGPipeline
 
-app = FastAPI(title="Hybrid RAG API", version="0.3.0")
+# ---- Rate limiter ----
+limiter = Limiter(key_func=get_remote_address)
 
+# ---- API Key auth ----
+api_key_header = APIKeyHeader(name="X-API-Key", auto_error=False)
+
+
+def verify_api_key(api_key: str | None = Security(api_key_header)) -> str | None:
+    """Validate API key if RAG_API_KEY is configured. Skip auth if not set."""
+    expected = settings.rag_api_key
+    if not expected:
+        return None  # auth disabled
+    if not api_key or api_key != expected:
+        raise HTTPException(status_code=401, detail="Invalid or missing API key")
+    return api_key
+
+
+# ---- Lifespan ----
 pipeline: RAGPipeline | None = None
 
 
-@app.on_event("startup")
-def startup_event():
+@asynccontextmanager
+async def lifespan(app: FastAPI):
     global pipeline
 
     try:
@@ -59,6 +83,20 @@ def startup_event():
         print(f"Startup failed: {e}")
         pipeline = None
 
+    yield
+
+    pipeline = None
+
+
+# ---- App ----
+app = FastAPI(title="Hybrid RAG API", version="0.4.0", lifespan=lifespan)
+app.state.limiter = limiter
+
+
+@app.exception_handler(RateLimitExceeded)
+async def rate_limit_handler(request: Request, exc: RateLimitExceeded):
+    return JSONResponse(status_code=429, content={"detail": "Rate limit exceeded. Try again later."})
+
 
 @app.get("/health")
 def health():
@@ -66,7 +104,8 @@ def health():
 
 
 @app.post("/ask", response_model=AskResponse)
-def ask(request: AskRequest):
+@limiter.limit(settings.rate_limit)
+def ask(request: AskRequest, req: Request, _api_key: str | None = Depends(verify_api_key)):
     if pipeline is None:
         raise HTTPException(status_code=500, detail="Pipeline not initialized")
 

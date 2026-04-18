@@ -1,6 +1,15 @@
 ```mermaid
 flowchart TD
-    User([User]) -->|POST /ask| API[FastAPI Endpoint]
+    User([User]) -->|POST /ask| AUTH
+
+    subgraph Security["API Security Layer"]
+        direction TB
+        AUTH[API Key Auth<br/><i>X-API-Key header</i>]
+        RL[Rate Limiter<br/><i>slowapi · 20/min</i>]
+        AUTH --> RL
+    end
+
+    RL --> API[FastAPI Endpoint<br/><i>lifespan managed</i>]
 
     subgraph Pipeline["RAG Pipeline"]
         direction TB
@@ -44,6 +53,13 @@ flowchart TD
         LOADER --> CHUNKER --> EMBEDDER
     end
 
+    subgraph Docker["Container Infrastructure"]
+        direction LR
+        MS[Multi-stage Build]
+        NR[Non-root User]
+        PIN[Pinned Deps]
+    end
+
     API --> QR
     CE -->|response| API
     API -->|JSON response| User
@@ -60,8 +76,10 @@ flowchart TD
 
     RAW[/data/raw/] -->|source docs| LOADER
 
+    style Security fill:#fff0f0,stroke:#c44a4a
     style Pipeline fill:#f0f4ff,stroke:#4a6fa5
     style Retrieval fill:#f0fff0,stroke:#4a9f4a
     style Storage fill:#fff8f0,stroke:#c88a3a
     style Ingestion fill:#fff0f5,stroke:#a54a6f
+    style Docker fill:#f0f0ff,stroke:#6a6aaf
 ```

@@ -3,15 +3,16 @@
 A production-grade Retrieval-Augmented Generation system with hybrid search, cross-encoder reranking, query rewriting, source citations, and answer abstention.
 
 ![Python](https://img.shields.io/badge/Python-3.12-blue)
-![FastAPI](https://img.shields.io/badge/FastAPI-0.3.0-green)
+![FastAPI](https://img.shields.io/badge/FastAPI-0.4.0-green)
 ![License](https://img.shields.io/badge/License-MIT-yellow)
+![Tests](https://img.shields.io/badge/Tests-67%20passed-brightgreen)
 
 ## Architecture
 
 See [docs/architecture.md](docs/architecture.md) for the full Mermaid diagram.
 
 ```
-Question → Query Rewriting → Hybrid Retrieval (FAISS + BM25 → RRF) → Cross-Encoder Reranking → LLM Generation → Abstention Check → Citation Extraction → Response
+Question → API Key Auth → Rate Limiter → Query Rewriting → Hybrid Retrieval (FAISS + BM25 → RRF) → Cross-Encoder Reranking → LLM Generation → Abstention Check → Citation Extraction → Response
 ```
 
 ## Features
@@ -25,9 +26,11 @@ Question → Query Rewriting → Hybrid Retrieval (FAISS + BM25 → RRF) → Cro
 - **Source citations**: Bracket notation `[1]`, `[2]` with structured citation objects
 - **Answer abstention**: Refuses to answer when context is insufficient
 - **LLM generation**: OpenAI or Ollama (local)
-- **API**: FastAPI with Pydantic validation
-- **Docker**: Single-command deployment
+- **API**: FastAPI with Pydantic validation, lifespan-managed startup
+- **API security**: API key authentication (`X-API-Key` header) and rate limiting (slowapi)
+- **Docker**: Multi-stage build, non-root user, pinned dependencies
 - **Evaluation**: Benchmark suite with keyword recall, source hit rate, and abstention accuracy
+- **Testing**: 67 unit tests across 8 test files (pytest)
 
 ## Project Structure
 
@@ -60,10 +63,11 @@ production-hybrid-rag/
 │   └── architecture.md     # Mermaid architecture diagram
 ├── data/
 │   └── raw/                # Place source documents here
-├── Dockerfile
+├── Dockerfile              # Multi-stage build, non-root user
 ├── docker-compose.yml
+├── .dockerignore
 ├── .env.example
-└── requirements.txt
+└── requirements.txt        # Pinned dependencies
 ```
 
 ## Quickstart
@@ -99,6 +103,10 @@ Set in `.env`:
 OPENAI_API_KEY=ollama
 LLM_MODEL=llama3.2:3b
 OPENAI_BASE_URL=http://localhost:11434/v1
+
+# Optional: API security
+RAG_API_KEY=your-secret-key   # omit to disable auth
+RATE_LIMIT=20/minute           # requests per window
 ```
 
 ## API
@@ -106,8 +114,15 @@ OPENAI_BASE_URL=http://localhost:11434/v1
 ### `POST /ask`
 
 ```bash
+# Without auth (when RAG_API_KEY is not set)
 curl -X POST http://127.0.0.1:8000/ask \
   -H "Content-Type: application/json" \
+  -d '{"question": "What is RAG?", "top_k": 3}'
+
+# With auth (when RAG_API_KEY is set)
+curl -X POST http://127.0.0.1:8000/ask \
+  -H "Content-Type: application/json" \
+  -H "X-API-Key: your-secret-key" \
   -d '{"question": "What is RAG?", "top_k": 3}'
 ```
 
@@ -211,9 +226,21 @@ Results are saved to `eval/results.json`.
 - [x] Architecture diagram (Mermaid)
 - [x] Comprehensive README
 
+### Week 5 — Production Hardening
+- [x] Pinned dependencies for reproducible builds
+- [x] Multi-stage Docker build with non-root user
+- [x] API key authentication (`X-API-Key` header)
+- [x] Rate limiting (slowapi, configurable window)
+- [x] Lifespan context manager (replaced deprecated startup events)
+- [x] Full test coverage for pipeline, prompting, and retriever (67 tests)
+
 ### Future
 - [ ] Streaming responses
 - [ ] Multi-modal document support (PDF, HTML)
 - [ ] CI pipeline (GitHub Actions)
 - [ ] Configurable chunking strategies
 - [ ] Web UI
+- [ ] Mathematical evaluation framework (RAGAS, BERTScore, NDCG)
+- [ ] Observability (OpenTelemetry tracing, Prometheus metrics)
+- [ ] Auto-scaling (Kubernetes + HPA)
+- [ ] Advanced RAG (HyDE, semantic caching, guardrails)
