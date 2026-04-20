@@ -9,4 +9,3 @@ openai==2.30.0
 tqdm==4.67.3
 rank-bm25==0.2.2
 slowapi==0.1.9
-pytest==9.0.2

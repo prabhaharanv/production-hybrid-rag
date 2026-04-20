@@ -28,7 +28,7 @@ Question → API Key Auth → Rate Limiter → Query Rewriting → Hybrid Retrie
 - **LLM generation**: OpenAI or Ollama (local)
 - **API**: FastAPI with Pydantic validation, lifespan-managed startup
 - **API security**: API key authentication (`X-API-Key` header) and rate limiting (slowapi)
-- **Docker**: Multi-stage build, non-root user, pinned dependencies
+- **Docker**: Multi-stage build, non-root user, pinned dependencies, CVE-scanned (0 critical/high)
 - **Evaluation**: Benchmark suite with keyword recall, source hit rate, and abstention accuracy
 - **Testing**: 67 unit tests across 8 test files (pytest)
 
@@ -67,14 +67,15 @@ production-hybrid-rag/
 ├── docker-compose.yml
 ├── .dockerignore
 ├── .env.example
-└── requirements.txt        # Pinned dependencies
+├── requirements.txt        # Pinned production dependencies
+└── requirements-dev.txt    # Dev dependencies (pytest)
 ```
 
 ## Quickstart
 
 ```bash
 # 1. Install dependencies
-pip install -r requirements.txt
+pip install -r requirements-dev.txt   # includes production + dev (pytest)
 
 # 2. Configure environment
 cp .env.example .env
@@ -233,6 +234,7 @@ Results are saved to `eval/results.json`.
 - [x] Rate limiting (slowapi, configurable window)
 - [x] Lifespan context manager (replaced deprecated startup events)
 - [x] Full test coverage for pipeline, prompting, and retriever (67 tests)
+- [x] CVE scanning and remediation (0 critical/high, separated dev dependencies)
 
 ### Future
 - [ ] Streaming responses
