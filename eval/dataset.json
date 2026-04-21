@@ -4,69 +4,79 @@
     "question": "What is RAG?",
     "expected_keywords": ["retrieval", "generation", "context", "knowledge base"],
     "expected_source": "rag_intro.txt",
-    "should_abstain": false
+    "should_abstain": false,
+    "ground_truth": "RAG stands for Retrieval-Augmented Generation. It combines retrieval of relevant context from a knowledge base with language model generation to produce grounded answers."
   },
   {
     "id": "eval_002",
     "question": "How does RAG reduce hallucinations?",
     "expected_keywords": ["retrieval", "grounded", "context", "external"],
     "expected_source": "rag_intro.txt",
-    "should_abstain": false
+    "should_abstain": false,
+    "ground_truth": "RAG reduces hallucinations by grounding the language model's responses in retrieved external context, ensuring answers are supported by actual documents rather than fabricated."
   },
   {
     "id": "eval_003",
     "question": "What is chunking?",
     "expected_keywords": ["splitting", "documents", "smaller", "retrieval"],
     "expected_source": "chunking.txt",
-    "should_abstain": false
+    "should_abstain": false,
+    "ground_truth": "Chunking is the process of splitting documents into smaller pieces to improve retrieval precision. Smaller chunks allow the retriever to fetch more focused and relevant context."
   },
   {
     "id": "eval_004",
     "question": "What are common chunking methods?",
     "expected_keywords": ["fixed-size", "recursive", "structure-aware"],
     "expected_source": "chunking.txt",
-    "should_abstain": false
+    "should_abstain": false,
+    "ground_truth": "Common chunking methods include fixed-size chunking, recursive chunking, and structure-aware chunking that respects document boundaries like headings and paragraphs."
   },
   {
     "id": "eval_005",
     "question": "Why is chunk overlap important?",
     "expected_keywords": ["context", "overlap", "adjacent", "preserve"],
     "expected_source": "chunking.txt",
-    "should_abstain": false
+    "should_abstain": false,
+    "ground_truth": "Chunk overlap is important because it preserves context across adjacent chunks. Without overlap, relevant information at chunk boundaries can be lost, reducing retrieval quality."
   },
   {
     "id": "eval_006",
     "question": "What role does the retriever play in RAG?",
     "expected_keywords": ["retriever", "context", "knowledge base", "fetches"],
     "expected_source": "rag_intro.txt",
-    "should_abstain": false
+    "should_abstain": false,
+    "ground_truth": "The retriever fetches relevant context from the knowledge base given a query. It searches through indexed documents to find the most relevant chunks for the language model to use."
   },
   {
     "id": "eval_007",
     "question": "What role does the generator play in RAG?",
     "expected_keywords": ["generator", "answer", "grounded", "context"],
     "expected_source": "rag_intro.txt",
-    "should_abstain": false
+    "should_abstain": false,
+    "ground_truth": "The generator produces a grounded answer using the retrieved context. It takes the user question and retrieved chunks as input and generates a response that is faithful to the provided context."
   },
   {
     "id": "eval_008",
     "question": "What is the capital of France?",
     "expected_keywords": [],
     "expected_source": null,
-    "should_abstain": true
+    "should_abstain": true,
+    "ground_truth": null
   },
   {
     "id": "eval_009",
     "question": "Explain quantum computing",
     "expected_keywords": [],
     "expected_source": null,
-    "should_abstain": true
+    "should_abstain": true,
+    "ground_truth": null
   },
   {
     "id": "eval_010",
     "question": "How does chunking improve retrieval precision?",
     "expected_keywords": ["chunking", "precision", "semantic", "smaller"],
     "expected_source": "chunking.txt",
-    "should_abstain": false
+    "should_abstain": false,
+    "ground_truth": "Chunking improves retrieval precision by breaking documents into smaller, semantically focused pieces. This allows the retriever to return more precisely relevant context rather than large, loosely related passages."
   }
 ]

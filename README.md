@@ -3,9 +3,9 @@
 A production-grade Retrieval-Augmented Generation system with hybrid search, cross-encoder reranking, query rewriting, source citations, and answer abstention.
 
 ![Python](https://img.shields.io/badge/Python-3.12-blue)
-![FastAPI](https://img.shields.io/badge/FastAPI-0.4.0-green)
+![FastAPI](https://img.shields.io/badge/FastAPI-0.135.3-green)
 ![License](https://img.shields.io/badge/License-MIT-yellow)
-![Tests](https://img.shields.io/badge/Tests-67%20passed-brightgreen)
+![Tests](https://img.shields.io/badge/Tests-89%20passed-brightgreen)
 
 ## Architecture
 
@@ -30,6 +30,7 @@ Question → API Key Auth → Rate Limiter → Query Rewriting → Hybrid Retrie
 - **API security**: API key authentication (`X-API-Key` header) and rate limiting (slowapi)
 - **Docker**: Multi-stage build, non-root user, pinned dependencies, CVE-scanned (0 critical/high)
 - **Evaluation**: Benchmark suite with keyword recall, source hit rate, and abstention accuracy
+- **Deep evaluation**: Mathematical eval framework — RAGAS (faithfulness, answer relevance, context precision/recall), BERTScore, MRR, NDCG@K, NLI-based hallucination detection
 - **Testing**: 67 unit tests across 8 test files (pytest)
 
 ## Project Structure
@@ -54,7 +55,8 @@ production-hybrid-rag/
 │   ├── pipeline.py         # Rewrite → Retrieve → Rerank → Generate
 │   └── ingest.py           # End-to-end ingestion orchestration
 ├── eval/
-│   ├── dataset.json        # Evaluation questions with expected answers
+│   ├── dataset.json        # Evaluation questions with expected answers + ground truth
+│   ├── metrics.py          # Mathematical evaluation metrics
 │   └── benchmark.py        # Benchmark runner with metrics
 ├── tests/                  # Unit tests (pytest)
 ├── scripts/
@@ -190,13 +192,63 @@ python eval/benchmark.py
 
 # Use a custom dataset
 python eval/benchmark.py path/to/dataset.json
+
+# Enable deep evaluation metrics
+python eval/benchmark.py --deep-eval
+
+# Combine options
+python eval/benchmark.py eval/dataset.json --deep-eval --top-k 3
 ```
 
-Metrics reported:
+### Basic Metrics
+
 - **Keyword recall**: Fraction of expected keywords found in the answer
 - **Source hit rate**: Whether the correct source document was cited
 - **Abstention accuracy**: Whether the system correctly refused out-of-scope questions
 - **Latency**: End-to-end time per question
+
+### Mathematical Evaluation Framework
+
+Enable with `--deep-eval`. These metrics provide rigorous, quantitative evaluation of RAG quality.
+
+| Metric | Formula | What it proves |
+|--------|---------|----------------|
+| **RAGAS Faithfulness** | $\text{Faithfulness} = \frac{\text{claims supported by context}}{\text{total claims}}$ | Answer is grounded in retrieved context |
+| **RAGAS Answer Relevance** | $\text{Relevance} = \frac{1}{N} \sum_{i=1}^{N} \cos(E(q), E(a_i))$ where $a_i$ are reverse-generated questions | Answer actually addresses the question |
+| **Context Precision** | $\text{CP@K} = \frac{1}{K} \sum_{k=1}^{K} \text{Precision}(k) \cdot \text{rel}(k)$ | Retrieved chunks are relevant |
+| **Context Recall** | $\text{CR} = \frac{\text{ground truth sentences attributable to context}}{\text{total ground truth sentences}}$ | Context covers the ground truth |
+| **BERTScore** | $F_{\text{BERT}} = \frac{2 \cdot P_{\text{BERT}} \cdot R_{\text{BERT}}}{P_{\text{BERT}} + R_{\text{BERT}}}$ using contextual embeddings | Semantic similarity beyond keywords |
+| **MRR & NDCG@K** | $\text{MRR} = \frac{1}{\lvert Q \rvert} \sum_{i=1}^{\lvert Q \rvert} \frac{1}{\text{rank}_i}$ , $\text{NDCG@K} = \frac{DCG@K}{IDCG@K}$ | Retrieval ranking quality |
+| **Hallucination Detection** | NLI-based: classify each claim as entailed / contradicted / neutral vs context | Catches fabricated facts |
+
+#### Implementation Details
+
+- **NLI backbone**: `cross-encoder/nli-deberta-v3-small` classifies (context, claim) pairs
+- **Embedding model**: `all-MiniLM-L6-v2` for answer relevance cosine similarity and BERTScore
+- **Ground truth**: `eval/dataset.json` includes `ground_truth` fields for context recall
+- Models are lazily loaded (first use only) and reused across all evaluation items
+- Abstained answers are excluded from deep eval (no generated content to evaluate)
+
+#### Example Output
+
+```
+=== Benchmark Summary ===
+  total_questions: 10
+  avg_keyword_recall: 0.875
+  source_hit_rate: 0.9
+  abstention_accuracy: 1.0
+  avg_latency_s: 1.23
+  total_latency_s: 12.3
+  --- Deep Eval Averages ---
+    faithfulness: 0.8750
+    answer_relevance: 0.7321
+    context_precision: 0.9125
+    context_recall: 0.8500
+    bertscore_f1: 0.8234
+    mrr: 0.9500
+    ndcg: 0.9312
+    hallucination_rate: 0.1250
+```
 
 Results are saved to `eval/results.json`.
 

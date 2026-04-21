@@ -53,6 +53,36 @@ flowchart TD
         LOADER --> CHUNKER --> EMBEDDER
     end
 
+    subgraph Evaluation["Mathematical Evaluation Framework"]
+        direction TB
+        BENCH[Benchmark Runner]
+
+        subgraph BasicMetrics["Basic Metrics"]
+            KR[Keyword Recall]
+            SH[Source Hit Rate]
+            AA[Abstention Accuracy]
+        end
+
+        subgraph DeepMetrics["Deep Eval Metrics · --deep-eval"]
+            FAITH[RAGAS Faithfulness<br/><i>NLI entailment</i>]
+            RELEV[RAGAS Answer Relevance<br/><i>cosine similarity</i>]
+            CP[Context Precision@K<br/><i>ranked relevance</i>]
+            CR[Context Recall<br/><i>NLI attribution</i>]
+            BS[BERTScore F1<br/><i>contextual embeddings</i>]
+            MR[MRR & NDCG@K<br/><i>ranking quality</i>]
+            HD[Hallucination Detection<br/><i>NLI claim classification</i>]
+        end
+
+        BENCH --> BasicMetrics
+        BENCH --> DeepMetrics
+    end
+
+    subgraph EvalModels["Eval Model Backbone"]
+        direction LR
+        NLI[CrossEncoder<br/><i>nli-deberta-v3-small</i>]
+        EMB[SentenceTransformer<br/><i>all-MiniLM-L6-v2</i>]
+    end
+
     subgraph Docker["Container Infrastructure"]
         direction LR
         MS[Multi-stage Build]
@@ -76,10 +106,21 @@ flowchart TD
 
     RAW[/data/raw/] -->|source docs| LOADER
 
+    CE -.->|pipeline response| BENCH
+    FAITH -.-> NLI
+    CR -.-> NLI
+    HD -.-> NLI
+    RELEV -.-> EMB
+    BS -.-> EMB
+
     style Security fill:#fff0f0,stroke:#c44a4a
     style Pipeline fill:#f0f4ff,stroke:#4a6fa5
     style Retrieval fill:#f0fff0,stroke:#4a9f4a
     style Storage fill:#fff8f0,stroke:#c88a3a
     style Ingestion fill:#fff0f5,stroke:#a54a6f
     style Docker fill:#f0f0ff,stroke:#6a6aaf
+    style Evaluation fill:#fffff0,stroke:#b8a800
+    style EvalModels fill:#f5f0ff,stroke:#7a5aaf
+    style BasicMetrics fill:#f0fff5,stroke:#4a9f6a
+    style DeepMetrics fill:#fff5f0,stroke:#c87a3a
 ```
