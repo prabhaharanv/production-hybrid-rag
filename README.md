@@ -3,7 +3,7 @@
 A production-grade Retrieval-Augmented Generation system with hybrid search, cross-encoder reranking, query rewriting, source citations, and answer abstention.
 
 ![Python](https://img.shields.io/badge/Python-3.12-blue)
-![FastAPI](https://img.shields.io/badge/FastAPI-0.135.3-green)
+![FastAPI](https://img.shields.io/badge/FastAPI-0.4.0-green)
 ![License](https://img.shields.io/badge/License-MIT-yellow)
 ![Tests](https://img.shields.io/badge/Tests-89%20passed-brightgreen)
 
