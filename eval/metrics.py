@@ -89,7 +89,7 @@ _NLI_NEUTRAL = 2
 
 
 # ---------------------------------------------------------------------------
-# Metric 11: RAGAS Faithfulness
+# RAGAS Faithfulness
 # ---------------------------------------------------------------------------
 
 def ragas_faithfulness(answer: str, context: str) -> float:
@@ -112,7 +112,7 @@ def ragas_faithfulness(answer: str, context: str) -> float:
 
 
 # ---------------------------------------------------------------------------
-# Metric 12: RAGAS Answer Relevance
+# RAGAS Answer Relevance
 # ---------------------------------------------------------------------------
 
 def ragas_answer_relevance(question: str, answer: str, n_reverse: int = 3) -> float:
@@ -140,7 +140,7 @@ def ragas_answer_relevance(question: str, answer: str, n_reverse: int = 3) -> fl
 
 
 # ---------------------------------------------------------------------------
-# Metric 13: Context Precision @ K
+# Context Precision @ K
 # ---------------------------------------------------------------------------
 
 def context_precision_at_k(
@@ -180,7 +180,7 @@ def context_precision_at_k(
 
 
 # ---------------------------------------------------------------------------
-# Metric 14: Context Recall
+# Context Recall
 # ---------------------------------------------------------------------------
 
 def context_recall(ground_truth: str, context: str) -> float:
@@ -203,7 +203,7 @@ def context_recall(ground_truth: str, context: str) -> float:
 
 
 # ---------------------------------------------------------------------------
-# Metric 15: BERTScore (F1)
+# BERTScore (F1)
 # ---------------------------------------------------------------------------
 
 def bert_score_f1(reference: str, candidate: str) -> dict[str, float]:
@@ -242,7 +242,7 @@ def bert_score_f1(reference: str, candidate: str) -> dict[str, float]:
 
 
 # ---------------------------------------------------------------------------
-# Metric 16: MRR & NDCG @ K
+# MRR & NDCG @ K
 # ---------------------------------------------------------------------------
 
 def mean_reciprocal_rank(
@@ -304,7 +304,7 @@ def ndcg_at_k(
 
 
 # ---------------------------------------------------------------------------
-# Metric 17: Hallucination Detection (NLI-based)
+# Hallucination Detection (NLI-based)
 # ---------------------------------------------------------------------------
 
 def hallucination_score(answer: str, context: str) -> dict:

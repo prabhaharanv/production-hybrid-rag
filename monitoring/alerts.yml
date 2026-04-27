@@ -1,0 +1,81 @@
+groups:
+  - name: rag_alerts
+    rules:
+      # ── Latency ──
+      - alert: RAGHighLatencyP95
+        expr: histogram_quantile(0.95, sum(rate(rag_request_latency_seconds_bucket[5m])) by (le)) > 5
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "RAG p95 latency > 5s for 5 minutes"
+          description: "The 95th-percentile request latency is {{ $value | humanizeDuration }}."
+
+      - alert: RAGHighLatencyP99
+        expr: histogram_quantile(0.99, sum(rate(rag_request_latency_seconds_bucket[5m])) by (le)) > 10
+        for: 5m
+        labels:
+          severity: critical
+        annotations:
+          summary: "RAG p99 latency > 10s for 5 minutes"
+          description: "The 99th-percentile request latency is {{ $value | humanizeDuration }}."
+
+      # ── Error rate ──
+      - alert: RAGHighErrorRate
+        expr: |
+          (
+            sum(rate(rag_requests_total{status="error"}[5m]))
+            /
+            sum(rate(rag_requests_total[5m]))
+          ) > 0.05
+        for: 5m
+        labels:
+          severity: critical
+        annotations:
+          summary: "RAG error rate > 5% for 5 minutes"
+          description: "Current error rate is {{ $value | humanizePercentage }}."
+
+      # ── Abstention rate anomaly ──
+      - alert: RAGHighAbstentionRate
+        expr: |
+          (
+            sum(rate(rag_abstentions_total[15m]))
+            /
+            sum(rate(rag_requests_total{status="success"}[15m]))
+          ) > 0.3
+        for: 10m
+        labels:
+          severity: warning
+        annotations:
+          summary: "RAG abstention rate > 30% for 10 minutes"
+          description: "{{ $value | humanizePercentage }} of successful requests are abstentions, which may indicate degraded retrieval quality."
+
+      # ── Pipeline down ──
+      - alert: RAGPipelineNotReady
+        expr: rag_pipeline_ready == 0
+        for: 2m
+        labels:
+          severity: critical
+        annotations:
+          summary: "RAG pipeline is not ready"
+          description: "The pipeline readiness gauge has been 0 for over 2 minutes."
+
+      # ── Step latency (retrieval) ──
+      - alert: RAGSlowRetrieval
+        expr: histogram_quantile(0.95, sum(rate(rag_step_latency_seconds_bucket{step="retrieve"}[5m])) by (le)) > 2
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "Retrieval step p95 latency > 2s"
+          description: "The retrieval step 95th-percentile latency is {{ $value | humanizeDuration }}."
+
+      # ── Step latency (generate / LLM) ──
+      - alert: RAGSlowGeneration
+        expr: histogram_quantile(0.95, sum(rate(rag_step_latency_seconds_bucket{step="generate"}[5m])) by (le)) > 8
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "LLM generation step p95 latency > 8s"
+          description: "The generation step 95th-percentile latency is {{ $value | humanizeDuration }}."

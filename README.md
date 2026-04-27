@@ -3,9 +3,9 @@
 A production-grade Retrieval-Augmented Generation system with hybrid search, cross-encoder reranking, query rewriting, source citations, and answer abstention.
 
 ![Python](https://img.shields.io/badge/Python-3.12-blue)
-![FastAPI](https://img.shields.io/badge/FastAPI-0.4.0-green)
+![FastAPI](https://img.shields.io/badge/FastAPI-0.5.0-green)
 ![License](https://img.shields.io/badge/License-MIT-yellow)
-![Tests](https://img.shields.io/badge/Tests-89%20passed-brightgreen)
+![Tests](https://img.shields.io/badge/Tests-108%20passed-brightgreen)
 
 ## Architecture
 
@@ -29,9 +29,12 @@ Question → API Key Auth → Rate Limiter → Query Rewriting → Hybrid Retrie
 - **API**: FastAPI with Pydantic validation, lifespan-managed startup
 - **API security**: API key authentication (`X-API-Key` header) and rate limiting (slowapi)
 - **Docker**: Multi-stage build, non-root user, pinned dependencies, CVE-scanned (0 critical/high)
+- **Observability**: OpenTelemetry tracing, Prometheus metrics, structlog JSON logging with correlation IDs
+- **Monitoring**: Grafana dashboards (latency percentiles, error rates, abstention rate), Prometheus alerting rules
+- **Health checks**: Liveness (`/health`) and deep readiness probes (`/health/ready`) for Kubernetes/load balancers
 - **Evaluation**: Benchmark suite with keyword recall, source hit rate, and abstention accuracy
 - **Deep evaluation**: Mathematical eval framework — RAGAS (faithfulness, answer relevance, context precision/recall), BERTScore, MRR, NDCG@K, NLI-based hallucination detection
-- **Testing**: 67 unit tests across 8 test files (pytest)
+- **Testing**: 83 unit tests across 9 test files (pytest)
 
 ## Project Structure
 
@@ -40,7 +43,12 @@ production-hybrid-rag/
 ├── app/
 │   ├── api.py              # FastAPI application and endpoints
 │   ├── config.py           # Settings loaded from .env
-│   └── schemas.py          # Request/response Pydantic models
+│   ├── schemas.py          # Request/response Pydantic models
+│   └── observability/      # Observability & monitoring
+│       ├── tracing.py      # OpenTelemetry distributed tracing
+│       ├── metrics.py      # Prometheus metrics and counters
+│       ├── logging.py      # structlog JSON logging with correlation IDs
+│       └── health.py       # Liveness and readiness health checks
 ├── rag/
 │   ├── loader.py           # Document loader (.txt, .md)
 │   ├── chunking.py         # Text chunking with overlap
@@ -66,9 +74,16 @@ production-hybrid-rag/
 ├── data/
 │   └── raw/                # Place source documents here
 ├── Dockerfile              # Multi-stage build, non-root user
-├── docker-compose.yml
+├── docker-compose.yml      # App + Prometheus + Grafana + Jaeger + OTel Collector
 ├── .dockerignore
 ├── .env.example
+├── monitoring/
+│   ├── prometheus.yml      # Prometheus scrape config
+│   ├── alerts.yml          # Alerting rules (latency, errors, abstention)
+│   ├── otel-collector.yml  # OpenTelemetry Collector config
+│   ├── grafana-dashboard.json
+│   ├── grafana-datasources.yml
+│   └── grafana-dashboards.yml
 ├── requirements.txt        # Pinned production dependencies
 └── requirements-dev.txt    # Dev dependencies (pytest)
 ```
@@ -184,6 +199,46 @@ pytest tests/ -v
 pytest tests/test_pipeline.py -v
 ```
 
+## Observability & Monitoring
+
+The full monitoring stack runs alongside the app via Docker Compose:
+
+```bash
+docker compose up -d
+```
+
+| Service | URL | Purpose |
+|---------|-----|---------|
+| Prometheus | http://localhost:9090 | Metrics scraping and alerting |
+| Grafana | http://localhost:3000 (admin/admin) | Dashboards: latency percentiles, error rates, abstention rate, token usage |
+| Jaeger | http://localhost:16686 | Trace explorer: see every pipeline step with timing |
+
+### API Endpoints
+
+| Endpoint | Purpose |
+|----------|---------|
+| `GET /health` | Liveness probe — is the process alive? |
+| `GET /health/ready` | Readiness probe — are pipeline, retriever, generator, and indexes all operational? Returns 503 if degraded |
+| `GET /metrics` | Prometheus scrape endpoint |
+
+### Environment Variables
+
+| Variable | Default | Description |
+|----------|---------|-------------|
+| `OTLP_ENDPOINT` | *(none)* | OTel Collector gRPC endpoint (e.g. `http://otel-collector:4317`). Console output if unset |
+| `LOG_LEVEL` | `INFO` | Python log level |
+| `LOG_JSON` | `true` | JSON structured logs (`false` for coloured console) |
+
+### Alerting Rules
+
+Pre-configured in `monitoring/alerts.yml`:
+
+- **RAGHighLatencyP95/P99**: p95 > 5s or p99 > 10s for 5 minutes
+- **RAGHighErrorRate**: Error rate > 5% for 5 minutes
+- **RAGHighAbstentionRate**: Abstention rate > 30% for 10 minutes
+- **RAGPipelineNotReady**: Pipeline readiness gauge at 0 for 2 minutes
+- **RAGSlowRetrieval / RAGSlowGeneration**: Individual step latency spikes
+
 ## Evaluation
 
 ```bash
@@ -287,6 +342,8 @@ Results are saved to `eval/results.json`.
 - [x] Lifespan context manager (replaced deprecated startup events)
 - [x] Full test coverage for pipeline, prompting, and retriever (67 tests)
 - [x] CVE scanning and remediation (0 critical/high, separated dev dependencies)
+- [x] Mathematical evaluation framework (RAGAS, BERTScore, NDCG)
+- [x] Observability (OpenTelemetry tracing, Prometheus metrics)
 
 ### Future
 - [ ] Streaming responses
@@ -294,7 +351,5 @@ Results are saved to `eval/results.json`.
 - [ ] CI pipeline (GitHub Actions)
 - [ ] Configurable chunking strategies
 - [ ] Web UI
-- [ ] Mathematical evaluation framework (RAGAS, BERTScore, NDCG)
-- [ ] Observability (OpenTelemetry tracing, Prometheus metrics)
 - [ ] Auto-scaling (Kubernetes + HPA)
 - [ ] Advanced RAG (HyDE, semantic caching, guardrails)

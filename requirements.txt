@@ -9,3 +9,11 @@ openai==2.30.0
 tqdm==4.67.3
 rank-bm25==0.2.2
 slowapi==0.1.9
+
+# Observability & Monitoring
+opentelemetry-api==1.33.0
+opentelemetry-sdk==1.33.0
+opentelemetry-instrumentation-fastapi==0.54b0
+opentelemetry-exporter-otlp==1.33.0
+prometheus-client==0.22.1
+structlog==25.4.0

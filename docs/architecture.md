@@ -90,6 +90,33 @@ flowchart TD
         PIN[Pinned Deps]
     end
 
+    subgraph Observability["Observability & Monitoring"]
+        direction TB
+
+        subgraph Tracing["Distributed Tracing"]
+            OTEL[OpenTelemetry SDK<br/><i>span per pipeline step</i>]
+            OTELCOL[OTel Collector<br/><i>OTLP gRPC</i>]
+            JAEGER[Jaeger<br/><i>trace UI</i>]
+            OTEL --> OTELCOL --> JAEGER
+        end
+
+        subgraph Metrics["Prometheus Metrics"]
+            PROM_CLIENT[prometheus_client<br/><i>/metrics endpoint</i>]
+            PROM[Prometheus<br/><i>scrape + alerting</i>]
+            GRAFANA[Grafana<br/><i>dashboards</i>]
+            PROM_CLIENT --> PROM --> GRAFANA
+        end
+
+        subgraph Logging["Structured Logging"]
+            SLOG[structlog<br/><i>JSON + correlation IDs</i>]
+        end
+
+        subgraph HealthProbes["Health Checks"]
+            LIVE[GET /health<br/><i>liveness</i>]
+            READY[GET /health/ready<br/><i>readiness</i>]
+        end
+    end
+
     API --> QR
     CE -->|response| API
     API -->|JSON response| User
@@ -113,6 +140,14 @@ flowchart TD
     RELEV -.-> EMB
     BS -.-> EMB
 
+    API -.->|spans| OTEL
+    QR -.->|span: rewrite| OTEL
+    HR -.->|span: retrieve| OTEL
+    RR -.->|span: rerank| OTEL
+    GEN -.->|span: generate| OTEL
+    API -.->|metrics| PROM_CLIENT
+    API -.->|JSON logs| SLOG
+
     style Security fill:#fff0f0,stroke:#c44a4a
     style Pipeline fill:#f0f4ff,stroke:#4a6fa5
     style Retrieval fill:#f0fff0,stroke:#4a9f4a
@@ -123,4 +158,9 @@ flowchart TD
     style EvalModels fill:#f5f0ff,stroke:#7a5aaf
     style BasicMetrics fill:#f0fff5,stroke:#4a9f6a
     style DeepMetrics fill:#fff5f0,stroke:#c87a3a
+    style Observability fill:#f0ffff,stroke:#4a9faf
+    style Tracing fill:#e8f4fd,stroke:#5b9bd5
+    style Metrics fill:#fdf0e8,stroke:#d5855b
+    style Logging fill:#f0fde8,stroke:#7abd5b
+    style HealthProbes fill:#fde8f4,stroke:#bd5b9b
 ```
