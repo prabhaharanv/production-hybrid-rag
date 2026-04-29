@@ -2,7 +2,7 @@ from contextlib import asynccontextmanager
 import os
 
 import structlog
-from fastapi import FastAPI, HTTPException, Request, Security, Depends
+from fastapi import FastAPI, HTTPException, Request, Security, Depends, Body
 from fastapi.security import APIKeyHeader
 from slowapi import Limiter
 from slowapi.util import get_remote_address
@@ -149,7 +149,7 @@ def metrics_endpoint():
 
 @app.post("/ask", response_model=AskResponse)
 @limiter.limit(settings.rate_limit)
-def ask(request: AskRequest, req: Request, _api_key: str | None = Depends(verify_api_key)):
+def ask(request: Request, body: AskRequest = Body(...), _api_key: str | None = Depends(verify_api_key)):
     if pipeline is None:
         raise HTTPException(status_code=500, detail="Pipeline not initialized")
 
@@ -158,11 +158,11 @@ def ask(request: AskRequest, req: Request, _api_key: str | None = Depends(verify
     structlog.contextvars.bind_contextvars(correlation_id=correlation_id)
     log = get_logger("app.api")
 
-    top_k = request.top_k or settings.top_k
-    log.info("request_received", question_len=len(request.question), top_k=top_k)
+    top_k = body.top_k or settings.top_k
+    log.info("request_received", question_len=len(body.question), top_k=top_k)
 
     with track_request() as m:
         with trace_span("ask", {"correlation_id": correlation_id, "top_k": top_k}):
-            result = pipeline.ask(request.question, top_k=top_k)
+            result = pipeline.ask(body.question, top_k=top_k)
 
     return result

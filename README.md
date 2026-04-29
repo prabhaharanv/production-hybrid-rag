@@ -181,12 +181,29 @@ curl http://127.0.0.1:8000/health
 ## Docker
 
 ```bash
-# Build and run
+# Start the full stack (app + Prometheus + Grafana + Jaeger + OTel Collector)
 docker compose up --build
+```
 
-# Or build manually
+**First run**: The embedding model (`all-MiniLM-L6-v2`) and reranker model (`ms-marco-MiniLM-L-6-v2`) are downloaded automatically from HuggingFace on first startup (~100 MB total). Subsequent starts are instant because models are cached on the host via the `~/.cache/huggingface` volume mount.
+
+**Using Ollama (local LLM)**: Ollama runs on your host machine, not inside Docker. Start it before the stack:
+
+```bash
+ollama serve                        # terminal 1
+ollama pull llama3.2:3b             # one-time download
+docker compose up --build           # terminal 2
+```
+
+Set `OPENAI_BASE_URL=http://host.docker.internal:11434/v1` in `.env` so the container can reach Ollama on the host.
+
+**Standalone** (without the monitoring stack):
+```bash
 docker build -t hybrid-rag .
-docker run -p 8000:8000 --env-file .env -v ./data:/app/data hybrid-rag
+docker run -p 8000:8000 --env-file .env \
+  -v ./data:/app/data \
+  -v ~/.cache/huggingface:/home/appuser/.cache/huggingface \
+  hybrid-rag
 ```
 
 ## Testing

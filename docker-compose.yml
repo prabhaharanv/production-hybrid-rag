@@ -11,6 +11,7 @@ services:
       - LOG_LEVEL=INFO
     volumes:
       - ./data:/app/data
+      - ~/.cache/huggingface:/home/appuser/.cache/huggingface  # caches models on host; auto-downloads on first run
     restart: unless-stopped
     depends_on:
       - otel-collector
@@ -54,10 +55,10 @@ services:
     restart: unless-stopped
 
   jaeger:
-    image: jaegertracing/all-in-one:1.69
+    image: jaegertracing/all-in-one:1.69.0
     ports:
       - "16686:16686"  # Jaeger UI
-      - "14250:14250"  # gRPC (from otel-collector)
+      - "4317"         # OTLP gRPC (from otel-collector)
     restart: unless-stopped
 
 volumes:
