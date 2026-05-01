@@ -1,0 +1,116 @@
+# Default values for the RAG Helm chart.
+# Override per environment with values-<env>.yaml.
+
+replicaCount: 2
+
+image:
+  repository: hybrid-rag
+  tag: "latest"
+  pullPolicy: IfNotPresent
+
+service:
+  type: ClusterIP
+  port: 80
+
+# -- Application configuration (→ ConfigMap) --
+config:
+  EMBEDDING_MODEL: "sentence-transformers/all-MiniLM-L6-v2"
+  LLM_MODEL: "gpt-4.1-mini"
+  INDEX_DIR: "data/index"
+  RAW_DATA_DIR: "data/raw"
+  PROCESSED_DIR: "data/processed"
+  CHUNK_SIZE: "400"
+  CHUNK_OVERLAP: "60"
+  TOP_K: "5"
+  RRF_K: "60"
+  RERANKER_MODEL: "cross-encoder/ms-marco-MiniLM-L-6-v2"
+  ENABLE_RERANKER: "true"
+  ENABLE_QUERY_REWRITING: "true"
+  RATE_LIMIT: "20/minute"
+  LOG_LEVEL: "INFO"
+  LOG_JSON: "true"
+  OTLP_ENDPOINT: "http://otel-collector.monitoring:4317"
+
+# -- Secrets (→ Secret, provide via --set or sealed-secrets) --
+secrets:
+  OPENAI_API_KEY: ""
+  OPENAI_BASE_URL: ""
+  RAG_API_KEY: ""
+
+resources:
+  requests:
+    cpu: 500m
+    memory: 1Gi
+  limits:
+    cpu: "2"
+    memory: 4Gi
+
+# -- Autoscaling --
+autoscaling:
+  enabled: true
+  minReplicas: 2
+  maxReplicas: 10
+  targetCPU: 70
+  targetMemory: 80
+  # Custom metrics (requires prometheus-adapter)
+  customMetrics:
+    enabled: false
+    latencyTarget: "5"     # p95 seconds
+    inFlightTarget: "10"   # avg in-flight per pod
+  behavior:
+    scaleUp:
+      stabilizationWindowSeconds: 60
+      maxPercentPerMinute: 50
+      maxPodsPerMinute: 2
+    scaleDown:
+      stabilizationWindowSeconds: 300
+      maxPercentPer2Min: 25
+
+# -- Pod disruption budget --
+pdb:
+  enabled: true
+  minAvailable: 1
+
+# -- Health probes --
+probes:
+  liveness:
+    path: /health
+    initialDelaySeconds: 10
+    periodSeconds: 15
+    timeoutSeconds: 5
+    failureThreshold: 3
+  readiness:
+    path: /health/ready
+    initialDelaySeconds: 30
+    periodSeconds: 10
+    timeoutSeconds: 10
+    failureThreshold: 3
+  startup:
+    path: /health/ready
+    initialDelaySeconds: 10
+    periodSeconds: 10
+    timeoutSeconds: 10
+    failureThreshold: 18
+
+# -- Persistent storage --
+persistence:
+  data:
+    enabled: true
+    size: 5Gi
+    storageClass: ""
+  hfCache:
+    enabled: true
+    size: 2Gi
+    storageClass: ""
+
+# -- ServiceMonitor for Prometheus Operator --
+serviceMonitor:
+  enabled: false
+  interval: 15s
+  path: /metrics
+
+# -- Pod annotations --
+podAnnotations:
+  prometheus.io/scrape: "true"
+  prometheus.io/port: "8000"
+  prometheus.io/path: "/metrics"

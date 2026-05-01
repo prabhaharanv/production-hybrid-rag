@@ -90,6 +90,17 @@ flowchart TD
         PIN[Pinned Deps]
     end
 
+    subgraph K8s["Kubernetes Auto-Scaling"]
+        direction TB
+        DEP[Deployment<br/><i>2+ replicas</i>]
+        SVC[Service<br/><i>ClusterIP</i>]
+        HPA[HPA<br/><i>CPU · memory · p95 · in-flight</i>]
+        PDB[PodDisruptionBudget]
+        PA[prometheus-adapter<br/><i>custom metrics bridge</i>]
+        HPA --> DEP
+        PA -.->|custom metrics API| HPA
+    end
+
     subgraph Observability["Observability & Monitoring"]
         direction TB
 
@@ -147,6 +158,7 @@ flowchart TD
     GEN -.->|span: generate| OTEL
     API -.->|metrics| PROM_CLIENT
     API -.->|JSON logs| SLOG
+    PROM -.->|metrics| PA
 
     style Security fill:#fff0f0,stroke:#c44a4a
     style Pipeline fill:#f0f4ff,stroke:#4a6fa5
@@ -154,6 +166,7 @@ flowchart TD
     style Storage fill:#fff8f0,stroke:#c88a3a
     style Ingestion fill:#fff0f5,stroke:#a54a6f
     style Docker fill:#f0f0ff,stroke:#6a6aaf
+    style K8s fill:#e8f0ff,stroke:#4a6faf
     style Evaluation fill:#fffff0,stroke:#b8a800
     style EvalModels fill:#f5f0ff,stroke:#7a5aaf
     style BasicMetrics fill:#f0fff5,stroke:#4a9f6a

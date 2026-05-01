@@ -3,7 +3,7 @@
 A production-grade Retrieval-Augmented Generation system with hybrid search, cross-encoder reranking, query rewriting, source citations, and answer abstention.
 
 ![Python](https://img.shields.io/badge/Python-3.12-blue)
-![FastAPI](https://img.shields.io/badge/FastAPI-0.5.0-green)
+![FastAPI](https://img.shields.io/badge/FastAPI-0.6.0-green)
 ![License](https://img.shields.io/badge/License-MIT-yellow)
 ![Tests](https://img.shields.io/badge/Tests-108%20passed-brightgreen)
 
@@ -34,6 +34,10 @@ Question → API Key Auth → Rate Limiter → Query Rewriting → Hybrid Retrie
 - **Health checks**: Liveness (`/health`) and deep readiness probes (`/health/ready`) for Kubernetes/load balancers
 - **Evaluation**: Benchmark suite with keyword recall, source hit rate, and abstention accuracy
 - **Deep evaluation**: Mathematical eval framework — RAGAS (faithfulness, answer relevance, context precision/recall), BERTScore, MRR, NDCG@K, NLI-based hallucination detection
+- **Kubernetes**: Deployment, Service, HPA, ConfigMap, Secrets, PDB, PVCs
+- **Helm chart**: Parameterized chart with dev/staging/prod value overrides
+- **Auto-scaling**: HPA on CPU/memory + custom metrics (p95 latency, in-flight requests via prometheus-adapter)
+- **Load testing**: Locust scripts simulating realistic traffic patterns
 - **Testing**: 83 unit tests across 9 test files (pytest)
 
 ## Project Structure
@@ -73,6 +77,26 @@ production-hybrid-rag/
 │   └── architecture.md     # Mermaid architecture diagram
 ├── data/
 │   └── raw/                # Place source documents here
+├── k8s/                    # Raw Kubernetes manifests
+│   ├── namespace.yaml
+│   ├── configmap.yaml
+│   ├── secret.yaml
+│   ├── deployment.yaml     # Health probes, resource limits, PVC mounts
+│   ├── service.yaml
+│   ├── hpa.yaml            # CPU/memory + custom metrics (p95 latency, in-flight)
+│   ├── pdb.yaml            # Pod disruption budget
+│   ├── pvc.yaml            # Data + HuggingFace model cache
+│   └── prometheus-adapter.yaml
+├── helm/rag/               # Parameterized Helm chart
+│   ├── Chart.yaml
+│   ├── values.yaml         # Defaults
+│   ├── values-dev.yaml     # Dev: 1 replica, no HPA, debug logs
+│   ├── values-staging.yaml # Staging: 2-5 replicas, CPU/memory HPA
+│   ├── values-prod.yaml    # Prod: 3-20 replicas, custom metrics HPA
+│   └── templates/
+├── loadtest/
+│   ├── locustfile.py       # Locust load test scenarios
+│   └── requirements.txt
 ├── Dockerfile              # Multi-stage build, non-root user
 ├── docker-compose.yml      # App + Prometheus + Grafana + Jaeger + OTel Collector
 ├── .dockerignore
@@ -256,6 +280,80 @@ Pre-configured in `monitoring/alerts.yml`:
 - **RAGPipelineNotReady**: Pipeline readiness gauge at 0 for 2 minutes
 - **RAGSlowRetrieval / RAGSlowGeneration**: Individual step latency spikes
 
+## Kubernetes Deployment
+
+### Raw manifests
+
+```bash
+# Apply all manifests
+kubectl apply -f k8s/namespace.yaml
+kubectl apply -f k8s/
+
+# Check rollout
+kubectl -n rag get pods,hpa
+```
+
+### Helm chart
+
+```bash
+# Dev
+helm install rag helm/rag -n rag --create-namespace \
+  -f helm/rag/values-dev.yaml \
+  --set secrets.OPENAI_API_KEY=your-key
+
+# Staging
+helm install rag helm/rag -n rag --create-namespace \
+  -f helm/rag/values-staging.yaml \
+  --set secrets.OPENAI_API_KEY=your-key
+
+# Production (with custom metrics HPA)
+helm install rag helm/rag -n rag --create-namespace \
+  -f helm/rag/values-prod.yaml \
+  --set secrets.OPENAI_API_KEY=your-key
+```
+
+### Auto-scaling
+
+The HPA scales on four signals:
+
+| Signal | Type | Target | Notes |
+|--------|------|--------|-------|
+| CPU utilisation | Resource | 70% | Built-in metrics-server |
+| Memory utilisation | Resource | 80% | Built-in metrics-server |
+| p95 request latency | Custom | 5 s | Requires prometheus-adapter |
+| In-flight requests | Custom | 10/pod | Requires prometheus-adapter |
+
+To enable custom metrics, install [prometheus-adapter](https://github.com/kubernetes-sigs/prometheus-adapter) with the provided config:
+
+```bash
+helm install prometheus-adapter prometheus-community/prometheus-adapter \
+  -f k8s/prometheus-adapter.yaml -n monitoring
+```
+
+Scale-up is aggressive (50% increase/min), scale-down is conservative (25% decrease per 2 min with 5 min stabilisation window) to prevent flapping.
+
+## Load Testing
+
+```bash
+pip install -r loadtest/requirements.txt
+
+# Web UI at http://localhost:8089
+locust -f loadtest/locustfile.py --host http://localhost:8000
+
+# Headless quick smoke test (10 users, 60 seconds)
+locust -f loadtest/locustfile.py --host http://localhost:8000 \
+    --headless -u 10 -r 2 -t 60s
+
+# Sustained load test (100 users, 5 minutes)
+locust -f loadtest/locustfile.py --host http://localhost:8000 \
+    --headless -u 100 -r 10 -t 5m
+
+# With API key
+RAG_API_KEY=your-key locust -f loadtest/locustfile.py --host http://localhost:8000
+```
+
+Traffic mix: 43% `/ask` (in-scope), 13% `/ask` (custom top_k), 9% `/ask` (out-of-scope), 22% `/health`, 9% `/health/ready`, 4% `/metrics`.
+
 ## Evaluation
 
 ```bash
@@ -362,11 +460,17 @@ Results are saved to `eval/results.json`.
 - [x] Mathematical evaluation framework (RAGAS, BERTScore, NDCG)
 - [x] Observability (OpenTelemetry tracing, Prometheus metrics)
 
+### Week 6 — Auto-Scaling Infrastructure
+- [x] Kubernetes manifests (Deployment, Service, HPA, ConfigMap, Secrets, PDB)
+- [x] Horizontal Pod Autoscaler (CPU/memory + custom metrics via prometheus-adapter)
+- [x] Helm chart with dev/staging/prod value overrides
+- [x] Locust load testing scripts
+- [x] In-flight request gauge for HPA scaling signal
+
 ### Future
 - [ ] Streaming responses
 - [ ] Multi-modal document support (PDF, HTML)
 - [ ] CI pipeline (GitHub Actions)
 - [ ] Configurable chunking strategies
 - [ ] Web UI
-- [ ] Auto-scaling (Kubernetes + HPA)
 - [ ] Advanced RAG (HyDE, semantic caching, guardrails)

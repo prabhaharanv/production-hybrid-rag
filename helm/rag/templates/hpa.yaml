@@ -1,0 +1,66 @@
+{{- if .Values.autoscaling.enabled }}
+apiVersion: autoscaling/v2
+kind: HorizontalPodAutoscaler
+metadata:
+  name: {{ include "rag.fullname" . }}
+  labels:
+    {{- include "rag.labels" . | nindent 4 }}
+spec:
+  scaleTargetRef:
+    apiVersion: apps/v1
+    kind: Deployment
+    name: {{ include "rag.fullname" . }}
+  minReplicas: {{ .Values.autoscaling.minReplicas }}
+  maxReplicas: {{ .Values.autoscaling.maxReplicas }}
+  metrics:
+    {{- if .Values.autoscaling.targetCPU }}
+    - type: Resource
+      resource:
+        name: cpu
+        target:
+          type: Utilization
+          averageUtilization: {{ .Values.autoscaling.targetCPU }}
+    {{- end }}
+    {{- if .Values.autoscaling.targetMemory }}
+    - type: Resource
+      resource:
+        name: memory
+        target:
+          type: Utilization
+          averageUtilization: {{ .Values.autoscaling.targetMemory }}
+    {{- end }}
+    {{- if .Values.autoscaling.customMetrics.enabled }}
+    - type: Pods
+      pods:
+        metric:
+          name: rag_request_latency_seconds_p95
+        target:
+          type: AverageValue
+          averageValue: {{ .Values.autoscaling.customMetrics.latencyTarget | quote }}
+    - type: Pods
+      pods:
+        metric:
+          name: rag_requests_in_flight
+        target:
+          type: AverageValue
+          averageValue: {{ .Values.autoscaling.customMetrics.inFlightTarget | quote }}
+    {{- end }}
+  behavior:
+    scaleUp:
+      stabilizationWindowSeconds: {{ .Values.autoscaling.behavior.scaleUp.stabilizationWindowSeconds }}
+      policies:
+        - type: Percent
+          value: {{ .Values.autoscaling.behavior.scaleUp.maxPercentPerMinute }}
+          periodSeconds: 60
+        - type: Pods
+          value: {{ .Values.autoscaling.behavior.scaleUp.maxPodsPerMinute }}
+          periodSeconds: 60
+      selectPolicy: Max
+    scaleDown:
+      stabilizationWindowSeconds: {{ .Values.autoscaling.behavior.scaleDown.stabilizationWindowSeconds }}
+      policies:
+        - type: Percent
+          value: {{ .Values.autoscaling.behavior.scaleDown.maxPercentPer2Min }}
+          periodSeconds: 120
+      selectPolicy: Min
+{{- end }}

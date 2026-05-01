@@ -1,0 +1,22 @@
+# Prometheus Adapter configuration for HPA custom metrics.
+# Deploy with: helm install prometheus-adapter prometheus-community/prometheus-adapter -f prometheus-adapter.yaml
+rules:
+  # p95 request latency — HPA scales when this exceeds the target (5s)
+  - seriesQuery: 'rag_request_latency_seconds_bucket{namespace!="",pod!=""}'
+    resources:
+      overrides:
+        namespace: {resource: "namespace"}
+        pod: {resource: "pod"}
+    name:
+      as: "rag_request_latency_seconds_p95"
+    metricsQuery: 'histogram_quantile(0.95, sum(rate(<<.Series>>{<<.LabelMatchers>>}[2m])) by (le, <<.GroupBy>>))'
+
+  # In-flight requests — HPA scales when per-pod average exceeds the target (10)
+  - seriesQuery: 'rag_requests_in_flight{namespace!="",pod!=""}'
+    resources:
+      overrides:
+        namespace: {resource: "namespace"}
+        pod: {resource: "pod"}
+    name:
+      as: "rag_requests_in_flight"
+    metricsQuery: '<<.Series>>{<<.LabelMatchers>>}'

@@ -1,0 +1,30 @@
+# Dev environment — single replica, no HPA, relaxed resources
+replicaCount: 1
+
+image:
+  tag: "dev"
+
+config:
+  LOG_LEVEL: "DEBUG"
+  LOG_JSON: "false"
+  RATE_LIMIT: "100/minute"
+
+resources:
+  requests:
+    cpu: 250m
+    memory: 512Mi
+  limits:
+    cpu: "1"
+    memory: 2Gi
+
+autoscaling:
+  enabled: false
+
+pdb:
+  enabled: false
+
+persistence:
+  data:
+    size: 1Gi
+  hfCache:
+    size: 2Gi

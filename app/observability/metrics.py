@@ -80,6 +80,13 @@ class RAGMetrics:
             registry=self.registry,
         )
 
+        # ── In-flight requests (for HPA custom metric) ──
+        self.requests_in_flight = Gauge(
+            "rag_requests_in_flight",
+            "Number of /ask requests currently being processed",
+            registry=self.registry,
+        )
+
         # ── Liveness gauge ──
         self.pipeline_ready = Gauge(
             "rag_pipeline_ready",
@@ -116,6 +123,7 @@ def get_metrics() -> RAGMetrics:
 def track_request():
     """Context manager that times an entire /ask request."""
     m = get_metrics()
+    m.requests_in_flight.inc()
     start = time.perf_counter()
     try:
         yield m
@@ -125,6 +133,7 @@ def track_request():
         raise
     finally:
         m.request_latency.observe(time.perf_counter() - start)
+        m.requests_in_flight.dec()
 
 
 @contextmanager

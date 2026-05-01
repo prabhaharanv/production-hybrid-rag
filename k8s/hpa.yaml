@@ -1,0 +1,66 @@
+apiVersion: autoscaling/v2
+kind: HorizontalPodAutoscaler
+metadata:
+  name: rag-api
+  namespace: rag
+  labels:
+    app.kubernetes.io/name: rag-api
+spec:
+  scaleTargetRef:
+    apiVersion: apps/v1
+    kind: Deployment
+    name: rag-api
+  minReplicas: 2
+  maxReplicas: 10
+  metrics:
+    # ── Resource metrics (built-in) ──
+    - type: Resource
+      resource:
+        name: cpu
+        target:
+          type: Utilization
+          averageUtilization: 70
+    - type: Resource
+      resource:
+        name: memory
+        target:
+          type: Utilization
+          averageUtilization: 80
+
+    # ── Custom metrics (requires prometheus-adapter) ──
+    # Scale up when p95 request latency exceeds 5 seconds
+    - type: Pods
+      pods:
+        metric:
+          name: rag_request_latency_seconds_p95
+        target:
+          type: AverageValue
+          averageValue: "5"
+
+    # Scale up when avg in-flight requests per pod exceeds 10
+    - type: Pods
+      pods:
+        metric:
+          name: rag_requests_in_flight
+        target:
+          type: AverageValue
+          averageValue: "10"
+
+  behavior:
+    scaleUp:
+      stabilizationWindowSeconds: 60
+      policies:
+        - type: Percent
+          value: 50
+          periodSeconds: 60
+        - type: Pods
+          value: 2
+          periodSeconds: 60
+      selectPolicy: Max
+    scaleDown:
+      stabilizationWindowSeconds: 300
+      policies:
+        - type: Percent
+          value: 25
+          periodSeconds: 120
+      selectPolicy: Min

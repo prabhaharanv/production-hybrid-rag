@@ -116,7 +116,7 @@ async def lifespan(app: FastAPI):
 
 
 # ---- App ----
-app = FastAPI(title="Hybrid RAG API", version="0.5.0", lifespan=lifespan)
+app = FastAPI(title="Hybrid RAG API", version="0.6.0", lifespan=lifespan)
 app.state.limiter = limiter
 
 

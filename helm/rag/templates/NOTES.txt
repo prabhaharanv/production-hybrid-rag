@@ -1,0 +1,17 @@
+🚀 {{ .Chart.Name }} deployed!
+
+Endpoints:
+  kubectl port-forward svc/{{ include "rag.fullname" . }} 8000:{{ .Values.service.port }}
+
+  API:       http://localhost:8000/ask
+  Health:    http://localhost:8000/health
+  Ready:     http://localhost:8000/health/ready
+  Metrics:   http://localhost:8000/metrics
+
+{{- if .Values.autoscaling.enabled }}
+HPA: {{ .Values.autoscaling.minReplicas }}-{{ .Values.autoscaling.maxReplicas }} replicas (CPU {{ .Values.autoscaling.targetCPU }}%, Memory {{ .Values.autoscaling.targetMemory }}%)
+{{- end }}
+
+Check status:
+  kubectl get pods -l app.kubernetes.io/instance={{ .Release.Name }}
+  kubectl get hpa {{ include "rag.fullname" . }}

@@ -1,0 +1,53 @@
+# Production — full autoscaling with custom metrics
+replicaCount: 3
+
+image:
+  tag: "v0.5.0"
+  pullPolicy: IfNotPresent
+
+config:
+  LOG_LEVEL: "WARNING"
+  RATE_LIMIT: "20/minute"
+
+resources:
+  requests:
+    cpu: "1"
+    memory: 2Gi
+  limits:
+    cpu: "4"
+    memory: 8Gi
+
+autoscaling:
+  enabled: true
+  minReplicas: 3
+  maxReplicas: 20
+  targetCPU: 70
+  targetMemory: 80
+  customMetrics:
+    enabled: true
+    latencyTarget: "5"
+    inFlightTarget: "10"
+  behavior:
+    scaleUp:
+      stabilizationWindowSeconds: 60
+      maxPercentPerMinute: 50
+      maxPodsPerMinute: 4
+    scaleDown:
+      stabilizationWindowSeconds: 300
+      maxPercentPer2Min: 20
+
+pdb:
+  enabled: true
+  minAvailable: 2
+
+serviceMonitor:
+  enabled: true
+  interval: 10s
+
+persistence:
+  data:
+    size: 20Gi
+    storageClass: gp3
+  hfCache:
+    size: 5Gi
+    storageClass: gp3

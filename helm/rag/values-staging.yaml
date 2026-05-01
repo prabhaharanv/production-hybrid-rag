@@ -1,0 +1,32 @@
+# Staging — mirrors prod topology at lower scale
+replicaCount: 2
+
+image:
+  tag: "staging"
+
+config:
+  LOG_LEVEL: "INFO"
+  RATE_LIMIT: "50/minute"
+
+resources:
+  requests:
+    cpu: 500m
+    memory: 1Gi
+  limits:
+    cpu: "2"
+    memory: 4Gi
+
+autoscaling:
+  enabled: true
+  minReplicas: 2
+  maxReplicas: 5
+  targetCPU: 70
+  targetMemory: 80
+  customMetrics:
+    enabled: false
+
+persistence:
+  data:
+    size: 5Gi
+  hfCache:
+    size: 2Gi
