@@ -1,6 +1,8 @@
 ```mermaid
 flowchart TD
     User([User]) -->|POST /ask| AUTH
+    User -->|POST /ask/stream| AUTH
+    User -->|Browser| STUI
 
     subgraph Security["API Security Layer"]
         direction TB
@@ -10,6 +12,7 @@ flowchart TD
     end
 
     RL --> API[FastAPI Endpoint<br/><i>lifespan managed</i>]
+    RL --> STREAM[SSE Stream Endpoint<br/><i>StreamingResponse</i>]
 
     subgraph Pipeline["RAG Pipeline"]
         direction TB
@@ -18,6 +21,7 @@ flowchart TD
         RR[Cross-Encoder Reranker]
         PB[Prompt Builder]
         GEN[LLM Generator]
+        GENS[Streaming Generator<br/><i>token-by-token SSE</i>]
         AB[Abstention Check]
         CE[Citation Extractor]
 
@@ -25,7 +29,9 @@ flowchart TD
         HR -->|3x candidates| RR
         RR -->|top_k chunks| PB
         PB -->|prompt| GEN
+        PB -->|prompt| GENS
         GEN -->|raw answer| AB
+        GENS -->|SSE tokens| STREAM
         AB -->|answer| CE
     end
 
@@ -47,10 +53,33 @@ flowchart TD
 
     subgraph Ingestion["Ingestion Pipeline"]
         direction TB
-        LOADER[Document Loader<br/><i>.txt, .md</i>]
-        CHUNKER[Text Chunker<br/><i>word-level + overlap</i>]
+        LOADER[Document Loader<br/><i>.txt .md .pdf .html .docx</i>]
+        CHUNKER[Chunking Engine<br/><i>Strategy Pattern</i>]
         EMBEDDER[Sentence Transformer<br/><i>all-MiniLM-L6-v2</i>]
         LOADER --> CHUNKER --> EMBEDDER
+    end
+
+    subgraph ChunkStrats["Chunking Strategies"]
+        direction LR
+        CS_W[Word<br/><i>default</i>]
+        CS_S[Sentence<br/><i>nltk-style</i>]
+        CS_R[Recursive<br/><i>multi-separator</i>]
+        CS_T[Token<br/><i>tiktoken cl100k</i>]
+    end
+
+    subgraph WebUI["Streamlit Web UI"]
+        direction TB
+        STUI[Streamlit App<br/><i>:8501</i>]
+        STUI -->|/ask or /ask/stream| API
+        STUI -->|/ask or /ask/stream| STREAM
+    end
+
+    subgraph CICD["CI/CD Pipeline"]
+        direction LR
+        LINT[Ruff Lint<br/><i>check + format</i>]
+        TEST[Pytest<br/><i>unit tests</i>]
+        BUILD[Docker Build<br/><i>GHCR push</i>]
+        LINT --> TEST --> BUILD
     end
 
     subgraph Evaluation["Mathematical Evaluation Framework"]
@@ -129,8 +158,11 @@ flowchart TD
     end
 
     API --> QR
+    STREAM --> QR
     CE -->|response| API
+    GENS -.->|SSE events| STREAM
     API -->|JSON response| User
+    STREAM -->|SSE stream| User
 
     HR -.-> Retrieval
     RRF -->|fused results| HR
@@ -143,6 +175,7 @@ flowchart TD
     CHUNKER -->|records| RECORDS
 
     RAW[/data/raw/] -->|source docs| LOADER
+    CHUNKER -.-> ChunkStrats
 
     CE -.->|pipeline response| BENCH
     FAITH -.-> NLI
@@ -176,4 +209,7 @@ flowchart TD
     style Metrics fill:#fdf0e8,stroke:#d5855b
     style Logging fill:#f0fde8,stroke:#7abd5b
     style HealthProbes fill:#fde8f4,stroke:#bd5b9b
+    style ChunkStrats fill:#f5fff0,stroke:#6aaf4a
+    style WebUI fill:#fff0ff,stroke:#af4aaf
+    style CICD fill:#f0f8ff,stroke:#4a8faf
 ```
