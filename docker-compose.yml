@@ -6,6 +6,7 @@ services:
     env_file:
       - .env
     environment:
+      - OPENAI_BASE_URL=http://host.docker.internal:11434/v1
       - OTLP_ENDPOINT=http://otel-collector:4317
       - LOG_JSON=true
       - LOG_LEVEL=INFO

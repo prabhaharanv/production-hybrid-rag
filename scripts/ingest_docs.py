@@ -14,5 +14,6 @@ if __name__ == "__main__":
         embedding_model=settings.embedding_model,
         chunk_size=settings.chunk_size,
         chunk_overlap=settings.chunk_overlap,
+        chunking_strategy=settings.chunking_strategy,
     )
     print(result)

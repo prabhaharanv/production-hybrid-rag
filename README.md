@@ -3,7 +3,7 @@
 A production-grade Retrieval-Augmented Generation system with hybrid search, cross-encoder reranking, query rewriting, source citations, and answer abstention.
 
 ![Python](https://img.shields.io/badge/Python-3.12-blue)
-![FastAPI](https://img.shields.io/badge/FastAPI-0.6.0-green)
+![FastAPI](https://img.shields.io/badge/FastAPI-0.7.0-green)
 ![License](https://img.shields.io/badge/License-MIT-yellow)
 ![Tests](https://img.shields.io/badge/Tests-108%20passed-brightgreen)
 
@@ -17,7 +17,9 @@ Question → API Key Auth → Rate Limiter → Query Rewriting → Hybrid Retrie
 
 ## Features
 
-- **Ingestion**: Document loading (`.txt`, `.md`), word-level chunking with overlap
+- **Ingestion**: Document loading (`.txt`, `.md`, `.pdf`, `.html`, `.docx`), configurable chunking strategies
+- **Multi-modal documents**: PDF (PyMuPDF), HTML (BeautifulSoup4), DOCX (python-docx)
+- **Chunking strategies**: Word, sentence, recursive, token-aware — strategy pattern with config toggle
 - **Embeddings**: Sentence-transformer (`all-MiniLM-L6-v2`) with FAISS indexing
 - **Sparse retrieval**: BM25 keyword search (`rank-bm25`)
 - **Hybrid retrieval**: Reciprocal Rank Fusion (RRF) merging dense + sparse results
@@ -26,9 +28,12 @@ Question → API Key Auth → Rate Limiter → Query Rewriting → Hybrid Retrie
 - **Source citations**: Bracket notation `[1]`, `[2]` with structured citation objects
 - **Answer abstention**: Refuses to answer when context is insufficient
 - **LLM generation**: OpenAI or Ollama (local)
+- **Streaming**: SSE endpoint (`/ask/stream`) for real-time token-by-token responses
 - **API**: FastAPI with Pydantic validation, lifespan-managed startup
 - **API security**: API key authentication (`X-API-Key` header) and rate limiting (slowapi)
+- **Web UI**: Streamlit app with streaming responses, source panel, confidence indicators
 - **Docker**: Multi-stage build, non-root user, pinned dependencies, CVE-scanned (0 critical/high)
+- **CI/CD**: GitHub Actions pipeline — lint → test → build Docker → push to GHCR
 - **Observability**: OpenTelemetry tracing, Prometheus metrics, structlog JSON logging with correlation IDs
 - **Monitoring**: Grafana dashboards (latency percentiles, error rates, abstention rate), Prometheus alerting rules
 - **Health checks**: Liveness (`/health`) and deep readiness probes (`/health/ready`) for Kubernetes/load balancers
@@ -45,7 +50,7 @@ Question → API Key Auth → Rate Limiter → Query Rewriting → Hybrid Retrie
 ```
 production-hybrid-rag/
 ├── app/
-│   ├── api.py              # FastAPI application and endpoints
+│   ├── api.py              # FastAPI application — /ask, /ask/stream (SSE), /health
 │   ├── config.py           # Settings loaded from .env
 │   ├── schemas.py          # Request/response Pydantic models
 │   └── observability/      # Observability & monitoring
@@ -54,8 +59,8 @@ production-hybrid-rag/
 │       ├── logging.py      # structlog JSON logging with correlation IDs
 │       └── health.py       # Liveness and readiness health checks
 ├── rag/
-│   ├── loader.py           # Document loader (.txt, .md)
-│   ├── chunking.py         # Text chunking with overlap
+│   ├── loader.py           # Multi-modal loader (.txt, .md, .pdf, .html, .docx)
+│   ├── chunking.py         # Configurable chunking (word, sentence, recursive, token)
 │   ├── embeddings.py       # Sentence-transformer wrapper
 │   ├── vector_store.py     # FAISS index save/load/search
 │   ├── bm25_retriever.py   # BM25 sparse index and search
@@ -63,9 +68,12 @@ production-hybrid-rag/
 │   ├── reranker.py         # Cross-encoder reranker
 │   ├── query_rewriter.py   # LLM-based query rewriting
 │   ├── prompting.py        # Prompt with citation + abstention rules
-│   ├── generator.py        # LLM generation (OpenAI-compatible)
-│   ├── pipeline.py         # Rewrite → Retrieve → Rerank → Generate
+│   ├── generator.py        # LLM generation + streaming (OpenAI-compatible)
+│   ├── pipeline.py         # Rewrite → Retrieve → Rerank → Generate (sync + stream)
 │   └── ingest.py           # End-to-end ingestion orchestration
+├── ui/
+│   ├── app.py              # Streamlit Web UI (streaming, sources, confidence)
+│   └── requirements.txt
 ├── eval/
 │   ├── dataset.json        # Evaluation questions with expected answers + ground truth
 │   ├── metrics.py          # Mathematical evaluation metrics
@@ -75,8 +83,10 @@ production-hybrid-rag/
 │   └── ingest_docs.py      # CLI ingestion entry point
 ├── docs/
 │   └── architecture.md     # Mermaid architecture diagram
+├── .github/workflows/
+│   └── ci.yml              # GitHub Actions: lint → test → build → push
 ├── data/
-│   └── raw/                # Place source documents here
+│   └── raw/                # Place source documents here (.txt, .md, .pdf, .html, .docx)
 ├── k8s/                    # Raw Kubernetes manifests
 │   ├── namespace.yaml
 │   ├── configmap.yaml
@@ -123,7 +133,7 @@ cp .env.example .env
 # Edit .env with your API key (OpenAI or Ollama)
 
 # 3. Add documents to data/raw/
-#    Supports .txt and .md files
+#    Supports .txt, .md, .pdf, .html, .docx
 
 # 4. Run ingestion
 python scripts/ingest_docs.py
@@ -149,6 +159,9 @@ OPENAI_BASE_URL=http://localhost:11434/v1
 # Optional: API security
 RAG_API_KEY=your-secret-key   # omit to disable auth
 RATE_LIMIT=20/minute           # requests per window
+
+# Chunking strategy: word | sentence | recursive | token
+CHUNKING_STRATEGY=word
 ```
 
 ## API
@@ -201,6 +214,46 @@ Response:
 ```bash
 curl http://127.0.0.1:8000/health
 ```
+
+### `POST /ask/stream` (SSE)
+
+Streams the response token-by-token via Server-Sent Events:
+
+```bash
+curl -N -X POST http://127.0.0.1:8000/ask/stream \
+  -H "Content-Type: application/json" \
+  -d '{"question": "What is RAG?", "top_k": 3}'
+```
+
+SSE events:
+```
+data: {"event": "metadata", "rewritten_query": "...", "retrieved_chunks": [...]}
+
+data: {"event": "token", "data": "Retrieval"}
+data: {"event": "token", "data": "-Augmented"}
+data: {"event": "token", "data": " Generation"}
+...
+
+data: {"event": "done", "abstained": false, "citations": [...]}
+```
+
+## Web UI
+
+A Streamlit interface with real-time streaming, source panel, and confidence indicators:
+
+```bash
+pip install -r ui/requirements.txt
+streamlit run ui/app.py
+```
+
+Open http://localhost:8501. The UI connects to the RAG API (default: `http://localhost:8000`).
+
+| Feature | Description |
+|---------|-------------|
+| Streaming | Tokens appear in real-time as the LLM generates |
+| Source panel | Sidebar shows all retrieved chunks with relevance scores |
+| Confidence | High/Medium/Low based on average retrieval score |
+| Citations | Cited sources are highlighted in the source panel |
 
 ## Docker
 
@@ -422,55 +475,89 @@ Enable with `--deep-eval`. These metrics provide rigorous, quantitative evaluati
 
 Results are saved to `eval/results.json`.
 
+## Chunking Strategies
+
+Choose a strategy via the `CHUNKING_STRATEGY` environment variable or pass `strategy=` to `chunk_documents()`:
+
+| Strategy | Description | Best for |
+|----------|-------------|----------|
+| `word` | Fixed-size word-level chunks with overlap (default) | General use, fast |
+| `sentence` | Groups sentences up to chunk_size words, respects boundaries | Prose documents |
+| `recursive` | Hierarchical: paragraphs → sentences → words | Structured docs (markdown, reports) |
+| `token` | BPE token-aware via tiktoken (`cl100k_base`) | LLM token budget alignment |
+
+```bash
+# Set globally
+export CHUNKING_STRATEGY=sentence
+
+# Or per-ingestion
+CHUNKING_STRATEGY=recursive python scripts/ingest_docs.py
+```
+
+## CI/CD
+
+GitHub Actions pipeline (`.github/workflows/ci.yml`):
+
+```
+push/PR to main → lint (ruff) → test (pytest) → build Docker → push to GHCR
+```
+
+- **Lint**: `ruff check` + `ruff format --check` for consistent code style
+- **Test**: Full pytest suite on Python 3.12
+- **Build**: Multi-stage Docker build with layer caching (GitHub Actions cache)
+- **Push**: Container image pushed to GitHub Container Registry (`ghcr.io`) on merge to `main`
+
 ## Roadmap
 
-### Week 1 — Baseline RAG
+### Baseline RAG
 - [x] Document ingestion, chunking, embedding
 - [x] FAISS vector store and dense retrieval
 - [x] LLM generation with OpenAI/Ollama
 - [x] FastAPI `/ask` endpoint
 
-### Week 2 — Hybrid Retrieval & Citations
+### Hybrid Retrieval & Citations
 - [x] BM25 sparse retrieval (`rank-bm25`)
 - [x] Hybrid retrieval with Reciprocal Rank Fusion (RRF)
 - [x] Source citations with bracket notation in LLM answers
 - [x] Improved context formatting in prompts
 
-### Week 3 — Quality Improvements
+### Quality Improvements
 - [x] Cross-encoder reranker
 - [x] Query rewriting
 - [x] Better prompts
 - [x] Answer abstention (refuse when context is insufficient)
 
-### Week 4 — Portfolio Ready
+### Evaluation & Testing
 - [x] Evaluation dataset and benchmark suite
 - [x] Unit tests (pytest)
 - [x] Docker and docker-compose
 - [x] Architecture diagram (Mermaid)
-- [x] Comprehensive README
+- [x] Mathematical evaluation framework (RAGAS, BERTScore, NDCG)
 
-### Week 5 — Production Hardening
+### Production Hardening
 - [x] Pinned dependencies for reproducible builds
 - [x] Multi-stage Docker build with non-root user
 - [x] API key authentication (`X-API-Key` header)
 - [x] Rate limiting (slowapi, configurable window)
-- [x] Lifespan context manager (replaced deprecated startup events)
-- [x] Full test coverage for pipeline, prompting, and retriever (67 tests)
-- [x] CVE scanning and remediation (0 critical/high, separated dev dependencies)
-- [x] Mathematical evaluation framework (RAGAS, BERTScore, NDCG)
-- [x] Observability (OpenTelemetry tracing, Prometheus metrics)
+- [x] CVE scanning and remediation (0 critical/high)
+- [x] Observability (OpenTelemetry tracing, Prometheus metrics, structlog)
+- [x] Grafana dashboards and Prometheus alerting rules
 
-### Week 6 — Auto-Scaling Infrastructure
+### Auto-Scaling Infrastructure
 - [x] Kubernetes manifests (Deployment, Service, HPA, ConfigMap, Secrets, PDB)
 - [x] Horizontal Pod Autoscaler (CPU/memory + custom metrics via prometheus-adapter)
 - [x] Helm chart with dev/staging/prod value overrides
 - [x] Locust load testing scripts
-- [x] In-flight request gauge for HPA scaling signal
+
+### Streaming & Multi-Modal
+- [x] SSE streaming endpoint (`/ask/stream`) — real-time token delivery
+- [x] Multi-modal document support (PDF, HTML, DOCX)
+- [x] Configurable chunking strategies (word, sentence, recursive, token)
+- [x] CI/CD pipeline (GitHub Actions: lint → test → build → push)
+- [x] Web UI (Streamlit with streaming, source panel, confidence indicators)
 
 ### Future
-- [ ] Streaming responses
-- [ ] Multi-modal document support (PDF, HTML)
-- [ ] CI pipeline (GitHub Actions)
-- [ ] Configurable chunking strategies
-- [ ] Web UI
 - [ ] Advanced RAG (HyDE, semantic caching, guardrails)
+- [ ] Conversation memory (multi-turn context)
+- [ ] Document management API (upload, list, delete)
+- [ ] A/B testing framework for retrieval strategies

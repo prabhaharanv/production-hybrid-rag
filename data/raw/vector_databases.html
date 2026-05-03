@@ -1,0 +1,95 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Vector Databases: A Comprehensive Comparison</title>
+</head>
+<body>
+<article>
+    <h1>Vector Databases for Production RAG Systems</h1>
+
+    <p>Vector databases are specialized storage systems designed to index and search high-dimensional embedding vectors efficiently. They are a critical component of Retrieval-Augmented Generation pipelines, where query embeddings must be matched against millions of document embeddings in milliseconds.</p>
+
+    <h2>FAISS (Facebook AI Similarity Search)</h2>
+
+    <p>FAISS is an open-source library developed by Meta AI Research for efficient similarity search and clustering of dense vectors. It is not a database in the traditional sense but rather an in-memory index library. FAISS supports multiple index types including flat (brute-force), IVF (inverted file with quantization), and HNSW (hierarchical navigable small world graphs).</p>
+
+    <p>Advantages of FAISS include extremely fast search speeds (sub-millisecond for millions of vectors), GPU acceleration support, and no network overhead since it runs in-process. Limitations include no built-in persistence (you must serialize/deserialize the index), no distributed mode out of the box, and no metadata filtering during search.</p>
+
+    <p>FAISS is ideal for single-node applications with datasets under 10 million vectors, prototyping, and scenarios where search latency must be minimized. Many production RAG systems start with FAISS and migrate to managed solutions as they scale.</p>
+
+    <h2>Pinecone</h2>
+
+    <p>Pinecone is a fully managed vector database service. It handles infrastructure, scaling, and index optimization automatically. Pinecone supports metadata filtering alongside vector similarity search, allowing queries like "find similar vectors where category equals 'technical' and date is after 2024-01-01".</p>
+
+    <p>Key features include serverless and pod-based deployment options, automatic replication and sharding, hybrid search combining dense vectors with sparse (BM25-style) representations, and namespaces for logical data isolation. Pinecone provides a simple REST and gRPC API with client libraries in Python, JavaScript, and Go.</p>
+
+    <p>Pinecone is best suited for production systems that need managed infrastructure, teams without dedicated ML infrastructure engineers, and applications requiring metadata filtering with vector search.</p>
+
+    <h2>Weaviate</h2>
+
+    <p>Weaviate is an open-source vector database that can be self-hosted or used as a managed cloud service. It uses a graph-based data model where objects have properties and can be connected via cross-references. Weaviate includes built-in vectorization modules that can automatically generate embeddings from text, images, or other data types.</p>
+
+    <p>Notable features include GraphQL and REST APIs, multi-tenancy support, hybrid search (BM25 + vector), configurable HNSW indexes, and modules for OpenAI, Cohere, and HuggingFace integrations. Weaviate supports CRUD operations on individual objects without requiring full re-indexing.</p>
+
+    <p>Weaviate is well-suited for applications needing a full-featured database with vector capabilities, multi-modal search, and teams that prefer self-hosting with open-source software.</p>
+
+    <h2>Comparison Summary</h2>
+
+    <table>
+        <thead>
+            <tr>
+                <th>Feature</th>
+                <th>FAISS</th>
+                <th>Pinecone</th>
+                <th>Weaviate</th>
+            </tr>
+        </thead>
+        <tbody>
+            <tr>
+                <td>Deployment</td>
+                <td>Library (in-process)</td>
+                <td>Managed cloud</td>
+                <td>Self-hosted or cloud</td>
+            </tr>
+            <tr>
+                <td>Scalability</td>
+                <td>Single node</td>
+                <td>Automatic</td>
+                <td>Horizontal sharding</td>
+            </tr>
+            <tr>
+                <td>Metadata filtering</td>
+                <td>No (post-filter only)</td>
+                <td>Yes (pre-filter)</td>
+                <td>Yes (pre-filter)</td>
+            </tr>
+            <tr>
+                <td>Hybrid search</td>
+                <td>No</td>
+                <td>Yes</td>
+                <td>Yes</td>
+            </tr>
+            <tr>
+                <td>Latency (1M vectors)</td>
+                <td>&lt;1ms</td>
+                <td>~10ms</td>
+                <td>~5ms</td>
+            </tr>
+            <tr>
+                <td>Cost</td>
+                <td>Free</td>
+                <td>Pay-per-use</td>
+                <td>Free (self-hosted)</td>
+            </tr>
+        </tbody>
+    </table>
+
+    <h2>Choosing a Vector Database</h2>
+
+    <p>For prototypes and single-machine deployments, FAISS offers the best performance with zero infrastructure complexity. For production systems requiring high availability, automatic scaling, and metadata filtering, Pinecone removes operational burden at the cost of vendor lock-in. For teams wanting open-source with enterprise features and the flexibility to self-host, Weaviate provides a strong middle ground.</p>
+
+    <p>The choice often depends on scale requirements. Below 1 million vectors, FAISS handles most workloads efficiently. Between 1 and 100 million vectors, managed services like Pinecone simplify operations. Above 100 million vectors, careful architecture with sharding (Weaviate or Pinecone pods) becomes necessary.</p>
+</article>
+</body>
+</html>

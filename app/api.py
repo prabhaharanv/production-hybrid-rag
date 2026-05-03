@@ -7,7 +7,7 @@ from fastapi.security import APIKeyHeader
 from slowapi import Limiter
 from slowapi.util import get_remote_address
 from slowapi.errors import RateLimitExceeded
-from starlette.responses import JSONResponse, Response
+from starlette.responses import JSONResponse, Response, StreamingResponse
 
 from app.config import settings
 from app.schemas import AskRequest, AskResponse
@@ -116,7 +116,7 @@ async def lifespan(app: FastAPI):
 
 
 # ---- App ----
-app = FastAPI(title="Hybrid RAG API", version="0.6.0", lifespan=lifespan)
+app = FastAPI(title="Hybrid RAG API", version="0.7.0", lifespan=lifespan)
 app.state.limiter = limiter
 
 
@@ -166,3 +166,28 @@ def ask(request: Request, body: AskRequest = Body(...), _api_key: str | None = D
             result = pipeline.ask(body.question, top_k=top_k)
 
     return result
+
+
+# ---- Streaming endpoint ----
+
+@app.post("/ask/stream")
+@limiter.limit(settings.rate_limit)
+def ask_stream(request: Request, body: AskRequest = Body(...), _api_key: str | None = Depends(verify_api_key)):
+    """Stream the RAG response using Server-Sent Events (SSE)."""
+    if pipeline is None:
+        raise HTTPException(status_code=500, detail="Pipeline not initialized")
+
+    correlation_id = new_correlation_id()
+    structlog.contextvars.clear_contextvars()
+    structlog.contextvars.bind_contextvars(correlation_id=correlation_id)
+    log = get_logger("app.api")
+
+    top_k = body.top_k or settings.top_k
+    log.info("stream_request_received", question_len=len(body.question), top_k=top_k)
+
+    def event_generator():
+        with track_request() as m:
+            with trace_span("ask_stream", {"correlation_id": correlation_id, "top_k": top_k}):
+                yield from pipeline.ask_stream(body.question, top_k=top_k)
+
+    return StreamingResponse(event_generator(), media_type="text/event-stream")

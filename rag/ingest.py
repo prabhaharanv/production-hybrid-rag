@@ -11,9 +11,10 @@ def run_ingestion(
     embedding_model: str,
     chunk_size: int,
     chunk_overlap: int,
+    chunking_strategy: str | None = None,
 ) -> dict:
     documents = load_documents(raw_data_dir)
-    chunks = chunk_documents(documents, chunk_size=chunk_size, overlap=chunk_overlap)
+    chunks = chunk_documents(documents, chunk_size=chunk_size, overlap=chunk_overlap, strategy=chunking_strategy)
 
     if not chunks:
         raise ValueError("No chunks created. Check your input data.")
@@ -34,4 +35,5 @@ def run_ingestion(
         "num_chunks": len(chunks),
         "embedding_dim": int(vectors.shape[1]),
         "index_dir": index_dir,
+        "chunking_strategy": chunking_strategy or "word",
     }

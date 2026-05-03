@@ -1,5 +1,7 @@
+import json
 import re
 import time
+from collections.abc import Generator
 
 from rag.prompting import build_rag_prompt, ABSTENTION_PHRASE
 from app.observability.tracing import trace_span
@@ -94,3 +96,76 @@ class RAGPipeline:
             "citations": citations,
             "retrieved_chunks": retrieved_chunks,
         }
+
+    def ask_stream(self, question: str, top_k: int = 5) -> Generator[str, None, None]:
+        """Stream the RAG response as SSE events.
+
+        Yields JSON-encoded SSE data lines:
+        - {"event": "metadata", ...} with retrieval results
+        - {"event": "token", "data": "..."} per token
+        - {"event": "done", ...} with final metadata
+        """
+        metrics = get_metrics()
+        log = self.log.bind(question_len=len(question), top_k=top_k, stream=True)
+
+        # Query rewriting
+        rewritten_query = question
+        if self.query_rewriter:
+            with trace_span("rewrite", {"question_len": len(question)}):
+                with track_step("rewrite"):
+                    rewritten_query = self.query_rewriter.rewrite(question)
+
+        # Hybrid retrieval
+        fetch_k = top_k * 3 if self.reranker else top_k
+        with trace_span("retrieve", {"fetch_k": fetch_k}):
+            with track_step("retrieve"):
+                retrieved_chunks = self.retriever.retrieve(rewritten_query, top_k=fetch_k)
+
+        metrics.chunks_retrieved.observe(len(retrieved_chunks))
+
+        # Rerank
+        if self.reranker and retrieved_chunks:
+            with trace_span("rerank", {"candidate_count": len(retrieved_chunks)}):
+                with track_step("rerank"):
+                    retrieved_chunks = self.reranker.rerank(rewritten_query, retrieved_chunks, top_k=top_k)
+
+        # Emit metadata event (sources, rewritten query)
+        metadata = {
+            "event": "metadata",
+            "rewritten_query": rewritten_query,
+            "retrieved_chunks": retrieved_chunks,
+        }
+        yield f"data: {json.dumps(metadata)}\n\n"
+
+        # Stream LLM tokens
+        prompt = build_rag_prompt(question, retrieved_chunks)
+        full_answer = []
+        with trace_span("generate_stream", {"prompt_len": len(prompt)}):
+            for token in self.generator.generate_stream(prompt):
+                full_answer.append(token)
+                yield f"data: {json.dumps({'event': 'token', 'data': token})}\n\n"
+
+        answer = "".join(full_answer).strip()
+
+        # Abstention check
+        abstained = ABSTENTION_PHRASE in answer
+        if abstained:
+            metrics.abstention_count.inc()
+
+        # Citations
+        cited_indices = sorted(set(int(m) for m in re.findall(r"\[(\d+)\]", answer)))
+        citations = []
+        for idx in cited_indices:
+            if 1 <= idx <= len(retrieved_chunks):
+                chunk = retrieved_chunks[idx - 1]
+                citations.append({"reference": idx, "title": chunk.get("title", ""), "source": chunk.get("source", "")})
+
+        # Done event
+        done_payload = {
+            "event": "done",
+            "abstained": abstained,
+            "citations": citations,
+        }
+        yield f"data: {json.dumps(done_payload)}\n\n"
+
+        log.info("stream_completed", abstained=abstained, citation_count=len(citations))

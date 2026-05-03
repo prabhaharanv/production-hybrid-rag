@@ -20,6 +20,7 @@ class Settings(BaseModel):
     reranker_model: str = os.getenv("RERANKER_MODEL", "cross-encoder/ms-marco-MiniLM-L-6-v2")
     enable_reranker: bool = os.getenv("ENABLE_RERANKER", "true").lower() == "true"
     enable_query_rewriting: bool = os.getenv("ENABLE_QUERY_REWRITING", "true").lower() == "true"
+    chunking_strategy: str = os.getenv("CHUNKING_STRATEGY", "word")
     rag_api_key: str | None = os.getenv("RAG_API_KEY")
     rate_limit: str = os.getenv("RATE_LIMIT", "20/minute")
 
