@@ -62,6 +62,19 @@ services:
       - "4317"         # OTLP gRPC (from otel-collector)
     restart: unless-stopped
 
+  # ---- Web UI ----
+
+  streamlit-ui:
+    build: .
+    ports:
+      - "8501:8501"
+    environment:
+      - RAG_API_URL=http://rag-api:8000
+    command: ["python", "-m", "streamlit", "run", "ui/app.py", "--server.port=8501", "--server.address=0.0.0.0"]
+    depends_on:
+      - rag-api
+    restart: unless-stopped
+
 volumes:
   prometheus-data:
   grafana-data:

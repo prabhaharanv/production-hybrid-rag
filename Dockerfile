@@ -14,8 +14,10 @@ RUN pip install --no-cache-dir --upgrade pip && \
 ## ---------- Stage 2: runtime ----------
 FROM python:3.12-slim-bookworm
 
-# Apply latest security patches and upgrade pip
-RUN apt-get update && apt-get upgrade -y && rm -rf /var/lib/apt/lists/* && \
+# Apply latest security patches, install runtime deps for PyMuPDF/PDF handling, upgrade pip
+RUN apt-get update && apt-get upgrade -y && \
+    apt-get install -y --no-install-recommends libmupdf-dev libfreetype6 libharfbuzz0b libjbig2dec0 libjpeg62-turbo libopenjp2-7 && \
+    rm -rf /var/lib/apt/lists/* && \
     pip install --no-cache-dir --upgrade pip
 
 # Create non-root user
