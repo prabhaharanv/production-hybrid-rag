@@ -38,7 +38,9 @@ class ParentChildChunker:
         self.parent_strategy = get_chunking_strategy(parent_strategy)
         self.child_strategy = get_chunking_strategy(child_strategy)
 
-    def chunk_documents(self, documents: list[dict]) -> tuple[list[dict], dict[str, str]]:
+    def chunk_documents(
+        self, documents: list[dict]
+    ) -> tuple[list[dict], dict[str, str]]:
         """Split documents into parent and child chunks.
 
         Returns:
@@ -58,7 +60,7 @@ class ParentChildChunker:
             )
 
             for p_idx, parent_text in enumerate(parent_texts):
-                parent_id = f'{doc["doc_id"]}_parent_{p_idx}'
+                parent_id = f"{doc['doc_id']}_parent_{p_idx}"
 
                 # Create child chunks from this parent
                 child_texts = self.child_strategy.chunk(
@@ -113,11 +115,16 @@ class ParentChildStore:
                 if parent_id in seen_parents:
                     continue  # Avoid duplicate parent text
                 seen_parents.add(parent_id)
-                expanded.append({
-                    **chunk,
-                    "text": parent_text,
-                    "metadata": {**chunk.get("metadata", {}), "expanded_from_child": chunk_id},
-                })
+                expanded.append(
+                    {
+                        **chunk,
+                        "text": parent_text,
+                        "metadata": {
+                            **chunk.get("metadata", {}),
+                            "expanded_from_child": chunk_id,
+                        },
+                    }
+                )
             else:
                 expanded.append(chunk)
 

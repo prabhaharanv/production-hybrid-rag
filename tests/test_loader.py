@@ -84,11 +84,17 @@ class TestLoadHtml:
 class TestLoadPdf:
     def test_loads_pdf_file(self, tmp_path):
         """Test PDF loading with a real PDF from data/raw if available, else mock."""
-        sample = Path("/Users/prvelu/Desktop/lm/production-hybrid-rag/data/raw/llm_architecture.pdf")
+        sample = Path(
+            "/Users/prvelu/Desktop/lm/production-hybrid-rag/data/raw/llm_architecture.pdf"
+        )
         if sample.exists():
             text = _load_pdf(sample)
             assert len(text) > 0
-            assert "transformer" in text.lower() or "attention" in text.lower() or "model" in text.lower()
+            assert (
+                "transformer" in text.lower()
+                or "attention" in text.lower()
+                or "model" in text.lower()
+            )
         else:
             # Mock fitz for CI where sample may not exist
             mock_page = MagicMock()
@@ -117,7 +123,9 @@ class TestLoadPdf:
 class TestLoadDocx:
     def test_loads_docx_file(self, tmp_path):
         """Test DOCX loading with a real file if available, else mock."""
-        sample = Path("/Users/prvelu/Desktop/lm/production-hybrid-rag/data/raw/prompt_engineering.docx")
+        sample = Path(
+            "/Users/prvelu/Desktop/lm/production-hybrid-rag/data/raw/prompt_engineering.docx"
+        )
         if sample.exists():
             text = _load_docx(sample)
             assert len(text) > 0

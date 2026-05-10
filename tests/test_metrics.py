@@ -19,9 +19,13 @@ from eval.metrics import (
 
 # ── Helpers ──────────────────────────────────────────────────────────────────
 
+
 class TestSplitSentences:
     def test_basic(self):
-        assert _split_sentences("Hello world. How are you?") == ["Hello world.", "How are you?"]
+        assert _split_sentences("Hello world. How are you?") == [
+            "Hello world.",
+            "How are you?",
+        ]
 
     def test_single_sentence(self):
         assert _split_sentences("Hello world.") == ["Hello world."]
@@ -52,6 +56,7 @@ class TestCosineSimilarity:
 
 # ── Context Precision @ K ────────────────────────────────────────────────────
 
+
 class TestContextPrecision:
     def test_all_relevant(self):
         chunks = [{"source": "data/raw/a.txt"}, {"source": "data/raw/a.txt"}]
@@ -80,6 +85,7 @@ class TestContextPrecision:
 
 # ── MRR ──────────────────────────────────────────────────────────────────────
 
+
 class TestMRR:
     def test_first_position(self):
         chunks = [{"title": "a.txt"}, {"title": "b.txt"}]
@@ -98,6 +104,7 @@ class TestMRR:
 
 
 # ── NDCG @ K ────────────────────────────────────────────────────────────────
+
 
 class TestNDCG:
     def test_perfect_ranking(self):
@@ -127,6 +134,7 @@ class TestNDCG:
 
 # ── NLI-based metrics (faithfulness, context recall, hallucination) ──────────
 # These require model loading so we mark them for optional slow runs.
+
 
 @pytest.mark.slow
 class TestRagasFaithfulness:
@@ -205,15 +213,28 @@ class TestEvaluateSingle:
             question="What is RAG?",
             answer="RAG is retrieval-augmented generation.",
             context="RAG stands for retrieval-augmented generation. It combines retrieval with generation.",
-            retrieved_chunks=[{"title": "rag.txt", "source": "data/raw/rag.txt", "text": "RAG stands for..."}],
+            retrieved_chunks=[
+                {
+                    "title": "rag.txt",
+                    "source": "data/raw/rag.txt",
+                    "text": "RAG stands for...",
+                }
+            ],
             ground_truth="RAG is retrieval-augmented generation.",
             relevant_source="rag.txt",
             k=5,
         )
         expected_keys = {
-            "faithfulness", "answer_relevance", "context_precision",
-            "context_recall", "bertscore_precision", "bertscore_recall",
-            "bertscore_f1", "mrr", "ndcg", "hallucination_rate",
+            "faithfulness",
+            "answer_relevance",
+            "context_precision",
+            "context_recall",
+            "bertscore_precision",
+            "bertscore_recall",
+            "bertscore_f1",
+            "mrr",
+            "ndcg",
+            "hallucination_rate",
             "hallucination_details",
         }
         assert expected_keys.issubset(result.keys())

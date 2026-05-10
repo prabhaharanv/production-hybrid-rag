@@ -63,7 +63,9 @@ class TestAdaptiveRetriever:
 
     def test_complex_routes_to_hybrid(self):
         retriever = AdaptiveRetriever(self.dense, self.sparse, self.hybrid)
-        query = "Compare the trade-offs between dense versus sparse retrieval approaches"
+        query = (
+            "Compare the trade-offs between dense versus sparse retrieval approaches"
+        )
         results = retriever.retrieve(query, top_k=5)
 
         self.hybrid.retrieve.assert_called_once()
@@ -75,7 +77,9 @@ class TestAdaptiveRetriever:
         mock_classifier = MagicMock()
         mock_classifier.classify.return_value = "moderate"
 
-        retriever = AdaptiveRetriever(self.dense, self.sparse, self.hybrid, classifier=mock_classifier)
+        retriever = AdaptiveRetriever(
+            self.dense, self.sparse, self.hybrid, classifier=mock_classifier
+        )
         results = retriever.retrieve("something", top_k=5)
 
         self.dense.retrieve.assert_called_once()
@@ -85,7 +89,9 @@ class TestAdaptiveRetriever:
         mock_classifier = MagicMock()
         mock_classifier.classify.return_value = "complex"
 
-        retriever = AdaptiveRetriever(self.dense, self.sparse, self.hybrid, classifier=mock_classifier)
+        retriever = AdaptiveRetriever(
+            self.dense, self.sparse, self.hybrid, classifier=mock_classifier
+        )
         retriever.retrieve("any query", top_k=3)
 
         mock_classifier.classify.assert_called_once_with("any query")

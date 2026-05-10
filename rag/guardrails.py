@@ -17,6 +17,7 @@ from dataclasses import dataclass, field
 @dataclass
 class GuardrailResult:
     """Result of a guardrail check."""
+
     passed: bool
     violations: list[str] = field(default_factory=list)
     redacted_text: str | None = None
@@ -38,7 +39,9 @@ PII_PATTERNS = {
 class PIIDetector:
     """Detects and optionally redacts Personally Identifiable Information."""
 
-    def __init__(self, patterns: dict[str, re.Pattern] | None = None, redact: bool = True):
+    def __init__(
+        self, patterns: dict[str, re.Pattern] | None = None, redact: bool = True
+    ):
         self.patterns = patterns or PII_PATTERNS
         self.redact = redact
 
@@ -65,15 +68,24 @@ class PIIDetector:
 
 # Known prompt injection patterns
 INJECTION_PATTERNS = [
-    re.compile(r"ignore\s+(all\s+)?(previous|above|prior)\s+(instructions?|prompts?|rules?)", re.IGNORECASE),
-    re.compile(r"(disregard|forget)\s+(all\s+)?(previous|above|prior|your)\s+", re.IGNORECASE),
+    re.compile(
+        r"ignore\s+(all\s+)?(previous|above|prior)\s+(instructions?|prompts?|rules?)",
+        re.IGNORECASE,
+    ),
+    re.compile(
+        r"(disregard|forget)\s+(all\s+)?(previous|above|prior|your)\s+", re.IGNORECASE
+    ),
     re.compile(r"you\s+are\s+now\s+", re.IGNORECASE),
     re.compile(r"new\s+instructions?:", re.IGNORECASE),
     re.compile(r"system\s*prompt\s*:", re.IGNORECASE),
-    re.compile(r"\bdo\s+not\s+follow\s+(the|your)\s+(previous|original)\b", re.IGNORECASE),
+    re.compile(
+        r"\bdo\s+not\s+follow\s+(the|your)\s+(previous|original)\b", re.IGNORECASE
+    ),
     re.compile(r"pretend\s+(you\s+are|to\s+be)\s+", re.IGNORECASE),
     re.compile(r"act\s+as\s+(if|though)\s+", re.IGNORECASE),
-    re.compile(r"override\s+(your|the|all)\s+(instructions?|rules?|guidelines?)", re.IGNORECASE),
+    re.compile(
+        r"override\s+(your|the|all)\s+(instructions?|rules?|guidelines?)", re.IGNORECASE
+    ),
     re.compile(r"\[INST\]|\[/INST\]|<\|im_start\|>|<\|im_end\|>", re.IGNORECASE),
     re.compile(r"```\s*system", re.IGNORECASE),
 ]
@@ -103,7 +115,9 @@ class PromptInjectionDetector:
 
         # Length check
         if len(text) > self.max_length:
-            violations.append(f"Input exceeds max length ({len(text)} > {self.max_length})")
+            violations.append(
+                f"Input exceeds max length ({len(text)} > {self.max_length})"
+            )
 
         # Injection pattern matching
         for pattern in self.patterns:
@@ -126,7 +140,10 @@ class PromptInjectionDetector:
 
 # Basic toxicity/harmful content indicators
 TOXIC_PATTERNS = [
-    re.compile(r"\b(kill|murder|harm|attack|bomb|weapon)\s+(yourself|them|people|someone)\b", re.IGNORECASE),
+    re.compile(
+        r"\b(kill|murder|harm|attack|bomb|weapon)\s+(yourself|them|people|someone)\b",
+        re.IGNORECASE,
+    ),
     re.compile(r"\b(how\s+to\s+)(hack|steal|break\s+into|exploit)\b", re.IGNORECASE),
     re.compile(r"\b(racial\s+slur|hate\s+speech)\b", re.IGNORECASE),
 ]
@@ -134,7 +151,9 @@ TOXIC_PATTERNS = [
 # Content that shouldn't appear in RAG answers
 HALLUCINATION_INDICATORS = [
     re.compile(r"as\s+an\s+AI\s+(language\s+)?model", re.IGNORECASE),
-    re.compile(r"I\s+don'?t\s+have\s+access\s+to\s+(real-?time|current)", re.IGNORECASE),
+    re.compile(
+        r"I\s+don'?t\s+have\s+access\s+to\s+(real-?time|current)", re.IGNORECASE
+    ),
     re.compile(r"my\s+(training|knowledge)\s+(data|cutoff)", re.IGNORECASE),
 ]
 
@@ -170,6 +189,7 @@ class OutputGuardrail:
 
 # ---- Composite Guardrail ----
 
+
 class GuardrailPipeline:
     """Orchestrates all guardrail checks (input and output)."""
 
@@ -181,7 +201,9 @@ class GuardrailPipeline:
         pii_redact: bool = True,
     ):
         self.pii_detector = PIIDetector(redact=pii_redact) if enable_pii else None
-        self.injection_detector = PromptInjectionDetector() if enable_injection else None
+        self.injection_detector = (
+            PromptInjectionDetector() if enable_injection else None
+        )
         self.output_guardrail = OutputGuardrail() if enable_output else None
 
     def check_input(self, text: str) -> GuardrailResult:

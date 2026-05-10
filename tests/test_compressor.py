@@ -10,7 +10,11 @@ class TestLLMCompressor:
     def test_compress_filters_irrelevant(self):
         mock_client = MagicMock()
         mock_client.chat.completions.create.return_value = MagicMock(
-            choices=[MagicMock(message=MagicMock(content="RAG combines retrieval and generation."))]
+            choices=[
+                MagicMock(
+                    message=MagicMock(content="RAG combines retrieval and generation.")
+                )
+            ]
         )
 
         with patch("rag.compressor.OpenAI", return_value=mock_client):
@@ -18,14 +22,20 @@ class TestLLMCompressor:
 
         compressor.client = mock_client
         chunks = [
-            {"text": "RAG combines retrieval and generation. The weather is sunny. Dogs are great.", "metadata": {}},
+            {
+                "text": "RAG combines retrieval and generation. The weather is sunny. Dogs are great.",
+                "metadata": {},
+            },
         ]
         result = compressor.compress("What is RAG?", chunks)
 
         assert len(result) == 1
         assert result[0]["text"] == "RAG combines retrieval and generation."
         assert result[0]["metadata"]["compressed"] is True
-        assert result[0]["metadata"]["original_length"] > result[0]["metadata"]["compressed_length"]
+        assert (
+            result[0]["metadata"]["original_length"]
+            > result[0]["metadata"]["compressed_length"]
+        )
 
     def test_compress_returns_originals_when_all_filtered(self):
         mock_client = MagicMock()
@@ -46,8 +56,12 @@ class TestLLMCompressor:
     def test_compress_multiple_chunks(self):
         mock_client = MagicMock()
         responses = [
-            MagicMock(choices=[MagicMock(message=MagicMock(content="Relevant sentence 1."))]),
-            MagicMock(choices=[MagicMock(message=MagicMock(content="Relevant sentence 2."))]),
+            MagicMock(
+                choices=[MagicMock(message=MagicMock(content="Relevant sentence 1."))]
+            ),
+            MagicMock(
+                choices=[MagicMock(message=MagicMock(content="Relevant sentence 2."))]
+            ),
         ]
         mock_client.chat.completions.create.side_effect = responses
 
@@ -56,7 +70,10 @@ class TestLLMCompressor:
 
         compressor.client = mock_client
         chunks = [
-            {"text": "First chunk with several sentences. Some irrelevant.", "metadata": {}},
+            {
+                "text": "First chunk with several sentences. Some irrelevant.",
+                "metadata": {},
+            },
             {"text": "Second chunk. Also some noise here.", "metadata": {}},
         ]
         result = compressor.compress("query", chunks)

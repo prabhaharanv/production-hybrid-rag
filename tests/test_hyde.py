@@ -10,11 +10,19 @@ class TestHyDEGenerator:
     def test_generate_hypothetical(self):
         mock_client = MagicMock()
         mock_client.chat.completions.create.return_value = MagicMock(
-            choices=[MagicMock(message=MagicMock(content="RAG retrieval combines dense and sparse methods."))]
+            choices=[
+                MagicMock(
+                    message=MagicMock(
+                        content="RAG retrieval combines dense and sparse methods."
+                    )
+                )
+            ]
         )
 
         with patch("rag.hyde.OpenAI", return_value=mock_client):
-            gen = HyDEGenerator(model="test-model", api_key="key", base_url="http://localhost")
+            gen = HyDEGenerator(
+                model="test-model", api_key="key", base_url="http://localhost"
+            )
 
         gen.client = mock_client
         result = gen.generate_hypothetical("What is RAG?")
@@ -32,7 +40,9 @@ class TestHyDEGenerator:
 class TestHyDERetriever:
     def test_retrieve_uses_hypothetical_doc_embedding(self):
         mock_hyde_gen = MagicMock()
-        mock_hyde_gen.generate_hypothetical.return_value = "A hypothetical answer about RAG."
+        mock_hyde_gen.generate_hypothetical.return_value = (
+            "A hypothetical answer about RAG."
+        )
 
         mock_embedder = MagicMock()
         mock_embedder.embed_query.return_value = np.array([[0.1, 0.2, 0.3]])
@@ -47,7 +57,9 @@ class TestHyDERetriever:
 
         # Verifies the flow: generate hypothetical → embed it → search
         mock_hyde_gen.generate_hypothetical.assert_called_once_with("What is RAG?")
-        mock_embedder.embed_query.assert_called_once_with("A hypothetical answer about RAG.")
+        mock_embedder.embed_query.assert_called_once_with(
+            "A hypothetical answer about RAG."
+        )
         mock_vector_store.search.assert_called_once()
 
         assert len(results) == 1

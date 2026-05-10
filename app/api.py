@@ -80,7 +80,9 @@ async def lifespan(app: FastAPI):
             base_url=settings.openai_base_url,
         )
 
-        reranker = Reranker(settings.reranker_model) if settings.enable_reranker else None
+        reranker = (
+            Reranker(settings.reranker_model) if settings.enable_reranker else None
+        )
 
         query_rewriter = (
             QueryRewriter(
@@ -122,10 +124,13 @@ app.state.limiter = limiter
 
 @app.exception_handler(RateLimitExceeded)
 async def rate_limit_handler(request: Request, exc: RateLimitExceeded):
-    return JSONResponse(status_code=429, content={"detail": "Rate limit exceeded. Try again later."})
+    return JSONResponse(
+        status_code=429, content={"detail": "Rate limit exceeded. Try again later."}
+    )
 
 
 # ---- Observability endpoints ----
+
 
 @app.get("/health")
 def health():
@@ -147,9 +152,14 @@ def metrics_endpoint():
 
 # ---- Main endpoint ----
 
+
 @app.post("/ask", response_model=AskResponse)
 @limiter.limit(settings.rate_limit)
-def ask(request: Request, body: AskRequest = Body(...), _api_key: str | None = Depends(verify_api_key)):
+def ask(
+    request: Request,
+    body: AskRequest = Body(...),
+    _api_key: str | None = Depends(verify_api_key),
+):
     if pipeline is None:
         raise HTTPException(status_code=500, detail="Pipeline not initialized")
 
@@ -170,9 +180,14 @@ def ask(request: Request, body: AskRequest = Body(...), _api_key: str | None = D
 
 # ---- Streaming endpoint ----
 
+
 @app.post("/ask/stream")
 @limiter.limit(settings.rate_limit)
-def ask_stream(request: Request, body: AskRequest = Body(...), _api_key: str | None = Depends(verify_api_key)):
+def ask_stream(
+    request: Request,
+    body: AskRequest = Body(...),
+    _api_key: str | None = Depends(verify_api_key),
+):
     """Stream the RAG response using Server-Sent Events (SSE)."""
     if pipeline is None:
         raise HTTPException(status_code=500, detail="Pipeline not initialized")
@@ -187,7 +202,9 @@ def ask_stream(request: Request, body: AskRequest = Body(...), _api_key: str | N
 
     def event_generator():
         with track_request():
-            with trace_span("ask_stream", {"correlation_id": correlation_id, "top_k": top_k}):
+            with trace_span(
+                "ask_stream", {"correlation_id": correlation_id, "top_k": top_k}
+            ):
                 yield from pipeline.ask_stream(body.question, top_k=top_k)
 
     return StreamingResponse(event_generator(), media_type="text/event-stream")

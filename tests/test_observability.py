@@ -3,12 +3,19 @@ import time
 from prometheus_client import CollectorRegistry
 
 from app.observability.tracing import init_tracing, get_tracer, trace_span
-from app.observability.metrics import RAGMetrics, init_metrics, get_metrics, track_request, track_step
+from app.observability.metrics import (
+    RAGMetrics,
+    init_metrics,
+    get_metrics,
+    track_request,
+    track_step,
+)
 from app.observability.logging import init_logging, get_logger, new_correlation_id
 from app.observability.health import HealthChecker
 
 
 # ---- Tracing Tests ----
+
 
 class TestTracing:
     def test_init_tracing_returns_tracer(self):
@@ -32,6 +39,7 @@ class TestTracing:
 
 
 # ---- Metrics Tests ----
+
 
 class TestMetrics:
     def _fresh_metrics(self):
@@ -107,6 +115,7 @@ class TestMetrics:
 
 # ---- Logging Tests ----
 
+
 class TestLogging:
     def test_init_logging_no_crash(self):
         init_logging(log_level="DEBUG", json_output=True)
@@ -130,6 +139,7 @@ class TestLogging:
 
 
 # ---- Health Check Tests ----
+
 
 class TestHealthChecker:
     def test_liveness_always_ok(self):
@@ -176,7 +186,9 @@ class TestHealthChecker:
         hc.set_pipeline(FakePipeline())
         result = hc.readiness()
         assert result["healthy"] is False
-        retriever_status = next(c for c in result["components"] if c["name"] == "retriever")
+        retriever_status = next(
+            c for c in result["components"] if c["name"] == "retriever"
+        )
         assert retriever_status["healthy"] is False
         assert "DB down" in retriever_status["detail"]
 

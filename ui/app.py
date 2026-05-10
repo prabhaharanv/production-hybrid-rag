@@ -37,7 +37,10 @@ with st.sidebar:
 
 # ---- Main area ----
 st.title("🔍 Production Hybrid RAG")
-st.caption("Ask questions about your documents — answers are grounded in retrieved context with citations.")
+st.caption(
+    "Ask questions about your documents — answers are grounded in retrieved context with citations."
+)
+
 
 def _build_headers() -> dict:
     headers = {"Content-Type": "application/json"}
@@ -63,7 +66,9 @@ def _display_confidence(metadata: dict):
         elif avg_score > 0.4:
             st.metric("Confidence", "Medium", delta=f"{avg_score:.0%}")
         else:
-            st.metric("Confidence", "Low", delta=f"{avg_score:.0%}", delta_color="inverse")
+            st.metric(
+                "Confidence", "Low", delta=f"{avg_score:.0%}", delta_color="inverse"
+            )
 
     with col2:
         st.metric("Citations", num_citations)
@@ -99,8 +104,13 @@ def _display_sources(chunks: list[dict], citations: list[dict]):
             score = chunk.get("score", 0)
             score_bar = "🟢" if score > 0.7 else "🟡" if score > 0.4 else "🔴"
 
-            with st.expander(f"{score_bar} [{i}] {chunk.get('title', 'Unknown')} {cited}", expanded=(i in cited_refs)):
-                st.caption(f"Score: {score:.3f} | Source: `{chunk.get('source', 'N/A')}`")
+            with st.expander(
+                f"{score_bar} [{i}] {chunk.get('title', 'Unknown')} {cited}",
+                expanded=(i in cited_refs),
+            ):
+                st.caption(
+                    f"Score: {score:.3f} | Source: `{chunk.get('source', 'N/A')}`"
+                )
                 st.text(chunk.get("text", "")[:500])
 
 
@@ -144,7 +154,9 @@ def _ask_streaming(question: str, top_k: int):
 
     placeholder.markdown(final_answer)
     _display_confidence(metadata)
-    _display_sources(metadata.get("retrieved_chunks", []), metadata.get("citations", []))
+    _display_sources(
+        metadata.get("retrieved_chunks", []), metadata.get("citations", [])
+    )
     return final_answer, metadata
 
 
@@ -188,11 +200,13 @@ if question := st.chat_input("Ask a question about your documents..."):
             else:
                 answer, metadata = _ask_sync(question, top_k)
 
-            st.session_state.messages.append({
-                "role": "assistant",
-                "content": answer,
-                "metadata": metadata,
-            })
+            st.session_state.messages.append(
+                {
+                    "role": "assistant",
+                    "content": answer,
+                    "metadata": metadata,
+                }
+            )
         except requests.exceptions.ConnectionError:
             st.error(f"Cannot connect to API at {api_url}. Is the server running?")
         except requests.exceptions.HTTPError as e:

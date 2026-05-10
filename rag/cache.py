@@ -44,6 +44,7 @@ class SemanticCache:
         if redis_url:
             try:
                 import redis
+
                 self.redis_client = redis.from_url(redis_url, decode_responses=False)
                 self.redis_client.ping()
             except Exception:
@@ -81,7 +82,9 @@ class SemanticCache:
     def _memory_get(self, query_embedding: np.ndarray) -> dict | None:
         now = time.time()
         # Clean expired entries
-        self._memory_cache = [e for e in self._memory_cache if now - e["timestamp"] < self.ttl_seconds]
+        self._memory_cache = [
+            e for e in self._memory_cache if now - e["timestamp"] < self.ttl_seconds
+        ]
 
         best_score = 0.0
         best_entry = None
@@ -93,16 +96,22 @@ class SemanticCache:
                 best_entry = entry
 
         if best_entry and best_score >= self.similarity_threshold:
-            return {**best_entry["result"], "_cache_hit": True, "_cache_score": best_score}
+            return {
+                **best_entry["result"],
+                "_cache_hit": True,
+                "_cache_score": best_score,
+            }
         return None
 
     def _memory_put(self, query: str, embedding: np.ndarray, result: dict) -> None:
-        self._memory_cache.append({
-            "query": query,
-            "embedding": embedding,
-            "result": result,
-            "timestamp": time.time(),
-        })
+        self._memory_cache.append(
+            {
+                "query": query,
+                "embedding": embedding,
+                "result": result,
+                "timestamp": time.time(),
+            }
+        )
 
     def _redis_get(self, query_embedding: np.ndarray) -> dict | None:
         try:

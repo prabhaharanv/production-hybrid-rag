@@ -47,7 +47,14 @@ class TestChunkText:
 
 class TestChunkDocuments:
     def test_single_document(self):
-        docs = [{"doc_id": "d1", "title": "test", "source": "test.txt", "text": "hello world"}]
+        docs = [
+            {
+                "doc_id": "d1",
+                "title": "test",
+                "source": "test.txt",
+                "text": "hello world",
+            }
+        ]
         result = chunk_documents(docs, chunk_size=100)
         assert len(result) == 1
         assert result[0]["chunk_id"] == "d1_chunk_0"
@@ -55,21 +62,45 @@ class TestChunkDocuments:
 
     def test_chunk_ids_are_unique(self):
         docs = [
-            {"doc_id": "d1", "title": "a", "source": "a.txt", "text": " ".join(["word"] * 30)},
-            {"doc_id": "d2", "title": "b", "source": "b.txt", "text": " ".join(["word"] * 30)},
+            {
+                "doc_id": "d1",
+                "title": "a",
+                "source": "a.txt",
+                "text": " ".join(["word"] * 30),
+            },
+            {
+                "doc_id": "d2",
+                "title": "b",
+                "source": "b.txt",
+                "text": " ".join(["word"] * 30),
+            },
         ]
         result = chunk_documents(docs, chunk_size=10, overlap=2)
         ids = [c["chunk_id"] for c in result]
         assert len(ids) == len(set(ids))
 
     def test_metadata_has_chunk_index(self):
-        docs = [{"doc_id": "d1", "title": "t", "source": "s", "text": " ".join(["word"] * 30)}]
+        docs = [
+            {
+                "doc_id": "d1",
+                "title": "t",
+                "source": "s",
+                "text": " ".join(["word"] * 30),
+            }
+        ]
         result = chunk_documents(docs, chunk_size=10, overlap=2)
         for i, chunk in enumerate(result):
             assert chunk["metadata"]["chunk_index"] == i
 
     def test_strategy_parameter_in_chunk_documents(self):
-        docs = [{"doc_id": "d1", "title": "t", "source": "s", "text": " ".join(["word"] * 20)}]
+        docs = [
+            {
+                "doc_id": "d1",
+                "title": "t",
+                "source": "s",
+                "text": " ".join(["word"] * 20),
+            }
+        ]
         result = chunk_documents(docs, chunk_size=10, overlap=2, strategy="sentence")
         assert len(result) >= 1
 
@@ -139,7 +170,9 @@ class TestRecursiveChunking:
 
     def test_falls_back_to_sentences(self):
         s = RecursiveChunking()
-        text = "Long paragraph. With many sentences. That go on. And on. And on further."
+        text = (
+            "Long paragraph. With many sentences. That go on. And on. And on further."
+        )
         chunks = s.chunk(text, chunk_size=4, overlap=0)
         assert len(chunks) >= 2
 

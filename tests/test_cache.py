@@ -59,7 +59,9 @@ class TestSemanticCache:
 
     def test_ttl_expiration(self):
         # Use very short TTL
-        cache = SemanticCache(embedder=self.embedder, ttl_seconds=0, similarity_threshold=0.9)
+        cache = SemanticCache(
+            embedder=self.embedder, ttl_seconds=0, similarity_threshold=0.9
+        )
         cache.put("test query", {"answer": "test"})
 
         # Should be expired immediately

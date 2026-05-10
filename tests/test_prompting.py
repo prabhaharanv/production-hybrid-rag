@@ -2,8 +2,18 @@ from rag.prompting import build_rag_prompt, ABSTENTION_PHRASE
 
 
 SAMPLE_CHUNKS = [
-    {"chunk_id": "c1", "title": "doc1.txt", "source": "data/raw/doc1.txt", "text": "RAG combines retrieval with generation."},
-    {"chunk_id": "c2", "title": "doc2.txt", "source": "data/raw/doc2.txt", "text": "Chunking splits documents into pieces."},
+    {
+        "chunk_id": "c1",
+        "title": "doc1.txt",
+        "source": "data/raw/doc1.txt",
+        "text": "RAG combines retrieval with generation.",
+    },
+    {
+        "chunk_id": "c2",
+        "title": "doc2.txt",
+        "source": "data/raw/doc2.txt",
+        "text": "Chunking splits documents into pieces.",
+    },
 ]
 
 

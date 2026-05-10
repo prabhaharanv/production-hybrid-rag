@@ -71,7 +71,9 @@ class RAGPipeline:
         fetch_k = top_k * 3 if self.reranker else top_k
         with trace_span("retrieve", {"fetch_k": fetch_k}) as span:
             with track_step("retrieve"):
-                retrieved_chunks = self.retriever.retrieve(rewritten_query, top_k=fetch_k)
+                retrieved_chunks = self.retriever.retrieve(
+                    rewritten_query, top_k=fetch_k
+                )
             span.set_attribute("chunk_count", len(retrieved_chunks))
 
         metrics.chunks_retrieved.observe(len(retrieved_chunks))
@@ -83,13 +85,17 @@ class RAGPipeline:
         if self.reranker and retrieved_chunks:
             with trace_span("rerank", {"candidate_count": len(retrieved_chunks)}):
                 with track_step("rerank"):
-                    retrieved_chunks = self.reranker.rerank(rewritten_query, retrieved_chunks, top_k=top_k)
+                    retrieved_chunks = self.reranker.rerank(
+                        rewritten_query, retrieved_chunks, top_k=top_k
+                    )
 
         # Step 3b: Contextual compression
         if self.compressor and retrieved_chunks:
             with trace_span("compress", {"chunk_count": len(retrieved_chunks)}):
                 with track_step("compress"):
-                    retrieved_chunks = self.compressor.compress(rewritten_query, retrieved_chunks)
+                    retrieved_chunks = self.compressor.compress(
+                        rewritten_query, retrieved_chunks
+                    )
 
         # Step 4: Generate answer
         prompt = build_rag_prompt(question, retrieved_chunks)
@@ -143,8 +149,12 @@ class RAGPipeline:
         if self.guardrails and not abstained:
             output_check = self.guardrails.check_output(answer)
             if not output_check.passed:
-                log.warn("output_guardrail_triggered", violations=output_check.violations)
-                result["answer"] = "The generated response was filtered due to content policy."
+                log.warn(
+                    "output_guardrail_triggered", violations=output_check.violations
+                )
+                result["answer"] = (
+                    "The generated response was filtered due to content policy."
+                )
                 result["abstained"] = True
                 result["guardrail_violations"] = output_check.violations
 
@@ -191,7 +201,9 @@ class RAGPipeline:
         fetch_k = top_k * 3 if self.reranker else top_k
         with trace_span("retrieve", {"fetch_k": fetch_k}):
             with track_step("retrieve"):
-                retrieved_chunks = self.retriever.retrieve(rewritten_query, top_k=fetch_k)
+                retrieved_chunks = self.retriever.retrieve(
+                    rewritten_query, top_k=fetch_k
+                )
 
         metrics.chunks_retrieved.observe(len(retrieved_chunks))
 
@@ -199,13 +211,17 @@ class RAGPipeline:
         if self.reranker and retrieved_chunks:
             with trace_span("rerank", {"candidate_count": len(retrieved_chunks)}):
                 with track_step("rerank"):
-                    retrieved_chunks = self.reranker.rerank(rewritten_query, retrieved_chunks, top_k=top_k)
+                    retrieved_chunks = self.reranker.rerank(
+                        rewritten_query, retrieved_chunks, top_k=top_k
+                    )
 
         # Contextual compression
         if self.compressor and retrieved_chunks:
             with trace_span("compress", {"chunk_count": len(retrieved_chunks)}):
                 with track_step("compress"):
-                    retrieved_chunks = self.compressor.compress(rewritten_query, retrieved_chunks)
+                    retrieved_chunks = self.compressor.compress(
+                        rewritten_query, retrieved_chunks
+                    )
 
         # Emit metadata event (sources, rewritten query)
         metadata = {
@@ -236,7 +252,13 @@ class RAGPipeline:
         for idx in cited_indices:
             if 1 <= idx <= len(retrieved_chunks):
                 chunk = retrieved_chunks[idx - 1]
-                citations.append({"reference": idx, "title": chunk.get("title", ""), "source": chunk.get("source", "")})
+                citations.append(
+                    {
+                        "reference": idx,
+                        "title": chunk.get("title", ""),
+                        "source": chunk.get("source", ""),
+                    }
+                )
 
         # Done event
         done_payload = {

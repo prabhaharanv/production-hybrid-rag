@@ -40,10 +40,12 @@ class TestBM25Store:
         assert store.search("anything") == []
 
     def test_add_rebuilds_index(self):
-        store = BM25Store(records=[
-            {"chunk_id": "c1", "text": "the cat sat on the mat"},
-            {"chunk_id": "c2", "text": "the dog chased the ball"},
-        ])
+        store = BM25Store(
+            records=[
+                {"chunk_id": "c1", "text": "the cat sat on the mat"},
+                {"chunk_id": "c2", "text": "the dog chased the ball"},
+            ]
+        )
         store.add([{"chunk_id": "c3", "text": "the moon shines at night"}])
         results = store.search("moon", top_k=1)
         assert len(results) == 1

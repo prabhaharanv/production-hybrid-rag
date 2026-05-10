@@ -33,10 +33,15 @@ def keyword_recall(answer: str, expected_keywords: list[str]) -> float:
 def source_hit(citations: list[dict], expected_source: str | None) -> bool:
     if expected_source is None:
         return True
-    return any(expected_source in c.get("title", "") or expected_source in c.get("source", "") for c in citations)
+    return any(
+        expected_source in c.get("title", "") or expected_source in c.get("source", "")
+        for c in citations
+    )
 
 
-def run_benchmark(eval_path: str, top_k: int = 5, enable_deep_eval: bool = False) -> dict:
+def run_benchmark(
+    eval_path: str, top_k: int = 5, enable_deep_eval: bool = False
+) -> dict:
     dataset = load_eval_dataset(eval_path)
 
     # Build pipeline
@@ -138,7 +143,9 @@ def run_benchmark(eval_path: str, top_k: int = 5, enable_deep_eval: bool = False
             deep_count += 1
 
         results.append(result)
-        print(f"  {item['id']}: keyword_recall={kr:.2f} source_hit={sh} abstention_ok={abstention_correct} latency={latency:.2f}s")
+        print(
+            f"  {item['id']}: keyword_recall={kr:.2f} source_hit={sh} abstention_ok={abstention_correct} latency={latency:.2f}s"
+        )
 
     n = len(dataset)
     summary = {
@@ -162,9 +169,20 @@ if __name__ == "__main__":
     import argparse
 
     parser = argparse.ArgumentParser(description="RAG Benchmark Suite")
-    parser.add_argument("eval_path", nargs="?", default="eval/dataset.json", help="Path to evaluation dataset")
-    parser.add_argument("--deep-eval", action="store_true", help="Enable deep evaluation metrics (RAGAS, BERTScore, MRR, NDCG, hallucination)")
-    parser.add_argument("--top-k", type=int, default=5, help="Number of chunks to retrieve")
+    parser.add_argument(
+        "eval_path",
+        nargs="?",
+        default="eval/dataset.json",
+        help="Path to evaluation dataset",
+    )
+    parser.add_argument(
+        "--deep-eval",
+        action="store_true",
+        help="Enable deep evaluation metrics (RAGAS, BERTScore, MRR, NDCG, hallucination)",
+    )
+    parser.add_argument(
+        "--top-k", type=int, default=5, help="Number of chunks to retrieve"
+    )
     args = parser.parse_args()
 
     print(f"Running benchmark on: {args.eval_path}")
@@ -173,7 +191,9 @@ if __name__ == "__main__":
     else:
         print("Deep evaluation metrics disabled (use --deep-eval to enable)\n")
 
-    report = run_benchmark(args.eval_path, top_k=args.top_k, enable_deep_eval=args.deep_eval)
+    report = run_benchmark(
+        args.eval_path, top_k=args.top_k, enable_deep_eval=args.deep_eval
+    )
 
     print("\n=== Benchmark Summary ===")
     for key, val in report["summary"].items():

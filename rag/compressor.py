@@ -42,25 +42,32 @@ class LLMCompressor:
         for chunk in chunks:
             relevant_text = self._extract_relevant(query, chunk["text"])
             if relevant_text:
-                compressed.append({
-                    **chunk,
-                    "text": relevant_text,
-                    "metadata": {
-                        **chunk.get("metadata", {}),
-                        "compressed": True,
-                        "original_length": len(chunk["text"]),
-                        "compressed_length": len(relevant_text),
-                    },
-                })
+                compressed.append(
+                    {
+                        **chunk,
+                        "text": relevant_text,
+                        "metadata": {
+                            **chunk.get("metadata", {}),
+                            "compressed": True,
+                            "original_length": len(chunk["text"]),
+                            "compressed_length": len(relevant_text),
+                        },
+                    }
+                )
 
-        return compressed if compressed else chunks  # Fallback to originals if all filtered
+        return (
+            compressed if compressed else chunks
+        )  # Fallback to originals if all filtered
 
     def _extract_relevant(self, query: str, context: str) -> str | None:
         prompt = self.COMPRESSION_PROMPT.format(question=query, context=context)
         response = self.client.chat.completions.create(
             model=self.model,
             messages=[
-                {"role": "system", "content": "You extract relevant sentences from documents."},
+                {
+                    "role": "system",
+                    "content": "You extract relevant sentences from documents.",
+                },
                 {"role": "user", "content": prompt},
             ],
             temperature=0.0,
@@ -79,9 +86,11 @@ class EmbeddingCompressor:
     and keeps only sentences above a similarity threshold.
     """
 
-    _SENTENCE_RE = re.compile(r'(?<=[.!?])\s+')
+    _SENTENCE_RE = re.compile(r"(?<=[.!?])\s+")
 
-    def __init__(self, embedder, similarity_threshold: float = 0.3, min_sentences: int = 1):
+    def __init__(
+        self, embedder, similarity_threshold: float = 0.3, min_sentences: int = 1
+    ):
         self.embedder = embedder
         self.similarity_threshold = similarity_threshold
         self.min_sentences = min_sentences
@@ -105,29 +114,32 @@ class EmbeddingCompressor:
 
             # Keep sentences above threshold
             relevant_indices = [
-                i for i, sim in enumerate(similarities)
+                i
+                for i, sim in enumerate(similarities)
                 if sim >= self.similarity_threshold
             ]
 
             # Ensure at least min_sentences are kept
             if len(relevant_indices) < self.min_sentences:
-                top_indices = np.argsort(similarities)[-self.min_sentences:]
+                top_indices = np.argsort(similarities)[-self.min_sentences :]
                 relevant_indices = sorted(top_indices.tolist())
 
             relevant_text = " ".join(sentences[i] for i in sorted(relevant_indices))
 
-            compressed.append({
-                **chunk,
-                "text": relevant_text,
-                "metadata": {
-                    **chunk.get("metadata", {}),
-                    "compressed": True,
-                    "original_length": len(chunk["text"]),
-                    "compressed_length": len(relevant_text),
-                    "sentences_kept": len(relevant_indices),
-                    "sentences_total": len(sentences),
-                },
-            })
+            compressed.append(
+                {
+                    **chunk,
+                    "text": relevant_text,
+                    "metadata": {
+                        **chunk.get("metadata", {}),
+                        "compressed": True,
+                        "original_length": len(chunk["text"]),
+                        "compressed_length": len(relevant_text),
+                        "sentences_kept": len(relevant_indices),
+                        "sentences_total": len(sentences),
+                    },
+                }
+            )
 
         return compressed
 

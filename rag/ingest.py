@@ -14,7 +14,12 @@ def run_ingestion(
     chunking_strategy: str | None = None,
 ) -> dict:
     documents = load_documents(raw_data_dir)
-    chunks = chunk_documents(documents, chunk_size=chunk_size, overlap=chunk_overlap, strategy=chunking_strategy)
+    chunks = chunk_documents(
+        documents,
+        chunk_size=chunk_size,
+        overlap=chunk_overlap,
+        strategy=chunking_strategy,
+    )
 
     if not chunks:
         raise ValueError("No chunks created. Check your input data.")

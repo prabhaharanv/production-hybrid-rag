@@ -103,7 +103,9 @@ class RAGUser(HttpUser):
             if resp.status_code == 200:
                 data = resp.json()
                 if len(data.get("retrieved_chunks", [])) > top_k:
-                    resp.failure(f"Got {len(data['retrieved_chunks'])} chunks, expected <= {top_k}")
+                    resp.failure(
+                        f"Got {len(data['retrieved_chunks'])} chunks, expected <= {top_k}"
+                    )
             elif resp.status_code == 429:
                 resp.success()
             else:

@@ -55,10 +55,12 @@ def _get_bertscore_model() -> SentenceTransformer:
 # Helper utilities
 # ---------------------------------------------------------------------------
 
+
 def _split_sentences(text: str) -> list[str]:
     """Split text into sentences on '.', '!', '?' boundaries."""
     import re
-    sentences = re.split(r'(?<=[.!?])\s+', text.strip())
+
+    sentences = re.split(r"(?<=[.!?])\s+", text.strip())
     return [s.strip() for s in sentences if s.strip()]
 
 
@@ -92,6 +94,7 @@ _NLI_NEUTRAL = 2
 # RAGAS Faithfulness
 # ---------------------------------------------------------------------------
 
+
 def ragas_faithfulness(answer: str, context: str) -> float:
     """
     Faithfulness = (claims in answer supported by context) / (total claims)
@@ -114,6 +117,7 @@ def ragas_faithfulness(answer: str, context: str) -> float:
 # ---------------------------------------------------------------------------
 # RAGAS Answer Relevance
 # ---------------------------------------------------------------------------
+
 
 def ragas_answer_relevance(question: str, answer: str, n_reverse: int = 3) -> float:
     """
@@ -142,6 +146,7 @@ def ragas_answer_relevance(question: str, answer: str, n_reverse: int = 3) -> fl
 # ---------------------------------------------------------------------------
 # Context Precision @ K
 # ---------------------------------------------------------------------------
+
 
 def context_precision_at_k(
     retrieved_chunks: list[dict],
@@ -183,6 +188,7 @@ def context_precision_at_k(
 # Context Recall
 # ---------------------------------------------------------------------------
 
+
 def context_recall(ground_truth: str, context: str) -> float:
     """
     CR = (ground truth sentences attributable to context) / (total ground truth sentences)
@@ -205,6 +211,7 @@ def context_recall(ground_truth: str, context: str) -> float:
 # ---------------------------------------------------------------------------
 # BERTScore (F1)
 # ---------------------------------------------------------------------------
+
 
 def bert_score_f1(reference: str, candidate: str) -> dict[str, float]:
     """
@@ -238,12 +245,17 @@ def bert_score_f1(reference: str, candidate: str) -> dict[str, float]:
     else:
         f1 = 2 * (p_bert * r_bert) / (p_bert + r_bert)
 
-    return {"precision": round(p_bert, 4), "recall": round(r_bert, 4), "f1": round(f1, 4)}
+    return {
+        "precision": round(p_bert, 4),
+        "recall": round(r_bert, 4),
+        "f1": round(f1, 4),
+    }
 
 
 # ---------------------------------------------------------------------------
 # MRR & NDCG @ K
 # ---------------------------------------------------------------------------
+
 
 def mean_reciprocal_rank(
     retrieved_chunks: list[dict],
@@ -307,6 +319,7 @@ def ndcg_at_k(
 # Hallucination Detection (NLI-based)
 # ---------------------------------------------------------------------------
 
+
 def hallucination_score(answer: str, context: str) -> dict:
     """
     Classify each answer claim as entailed / contradicted / neutral vs context.
@@ -347,6 +360,7 @@ def hallucination_score(answer: str, context: str) -> dict:
 # Convenience: run all metrics on a single evaluation item
 # ---------------------------------------------------------------------------
 
+
 def evaluate_single(
     question: str,
     answer: str,
@@ -365,8 +379,12 @@ def evaluate_single(
     result = {
         "faithfulness": round(ragas_faithfulness(answer, ctx), 4),
         "answer_relevance": round(ragas_answer_relevance(question, answer), 4),
-        "context_precision": round(context_precision_at_k(retrieved_chunks, relevant_source, k), 4),
-        "context_recall": round(context_recall(ground_truth or "", ctx), 4) if ground_truth else None,
+        "context_precision": round(
+            context_precision_at_k(retrieved_chunks, relevant_source, k), 4
+        ),
+        "context_recall": round(context_recall(ground_truth or "", ctx), 4)
+        if ground_truth
+        else None,
         "bertscore_precision": bs["precision"],
         "bertscore_recall": bs["recall"],
         "bertscore_f1": bs["f1"],

@@ -7,7 +7,7 @@ def build_rag_prompt(question: str, retrieved_chunks: list[dict]) -> str:
     for i, chunk in enumerate(retrieved_chunks, start=1):
         source_label = chunk.get("title", "Unknown")
         block = (
-            f"[{i}] \"{source_label}\"\n"
+            f'[{i}] "{source_label}"\n'
             f"    Source: {chunk.get('source', 'N/A')}\n"
             f"    ---\n"
             f"    {chunk['text']}"

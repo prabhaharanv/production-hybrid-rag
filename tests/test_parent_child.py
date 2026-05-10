@@ -63,11 +63,18 @@ class TestParentChildChunker:
 
 class TestParentChildStore:
     def test_expand_to_parents(self):
-        mapping = {"child_1": "This is the full parent text.", "child_2": "Another parent text."}
+        mapping = {
+            "child_1": "This is the full parent text.",
+            "child_2": "Another parent text.",
+        }
         store = ParentChildStore(mapping)
 
         chunks = [
-            {"chunk_id": "child_1", "text": "full parent", "metadata": {"parent_id": "p1"}},
+            {
+                "chunk_id": "child_1",
+                "text": "full parent",
+                "metadata": {"parent_id": "p1"},
+            },
             {"chunk_id": "child_2", "text": "Another", "metadata": {"parent_id": "p2"}},
         ]
 
@@ -83,8 +90,16 @@ class TestParentChildStore:
         store = ParentChildStore(mapping)
 
         chunks = [
-            {"chunk_id": "child_1", "text": "chunk1", "metadata": {"parent_id": "same_parent"}},
-            {"chunk_id": "child_2", "text": "chunk2", "metadata": {"parent_id": "same_parent"}},
+            {
+                "chunk_id": "child_1",
+                "text": "chunk1",
+                "metadata": {"parent_id": "same_parent"},
+            },
+            {
+                "chunk_id": "child_2",
+                "text": "chunk2",
+                "metadata": {"parent_id": "same_parent"},
+            },
         ]
 
         expanded = store.expand_to_parents(chunks)

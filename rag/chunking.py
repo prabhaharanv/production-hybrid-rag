@@ -18,13 +18,14 @@ from abc import ABC, abstractmethod
 
 # ---- Strategy interface ----
 
+
 class ChunkingStrategy(ABC):
     @abstractmethod
-    def chunk(self, text: str, chunk_size: int, overlap: int) -> list[str]:
-        ...
+    def chunk(self, text: str, chunk_size: int, overlap: int) -> list[str]: ...
 
 
 # ---- Concrete strategies ----
+
 
 class WordChunking(ChunkingStrategy):
     """Fixed-size word-level chunks with overlap."""
@@ -48,7 +49,7 @@ class WordChunking(ChunkingStrategy):
 class SentenceChunking(ChunkingStrategy):
     """Sentence-boundary-aware chunking. Groups sentences until chunk_size words."""
 
-    _SENT_RE = re.compile(r'(?<=[.!?])\s+')
+    _SENT_RE = re.compile(r"(?<=[.!?])\s+")
 
     def chunk(self, text: str, chunk_size: int, overlap: int) -> list[str]:
         sentences = self._SENT_RE.split(text.strip())
@@ -94,7 +95,9 @@ class RecursiveChunking(ChunkingStrategy):
     def chunk(self, text: str, chunk_size: int, overlap: int) -> list[str]:
         return self._split(text, chunk_size, overlap, 0)
 
-    def _split(self, text: str, chunk_size: int, overlap: int, sep_idx: int) -> list[str]:
+    def _split(
+        self, text: str, chunk_size: int, overlap: int, sep_idx: int
+    ) -> list[str]:
         if len(text.split()) <= chunk_size:
             return [text.strip()] if text.strip() else []
 
@@ -136,9 +139,12 @@ class TokenChunking(ChunkingStrategy):
     def __init__(self):
         try:
             import tiktoken
+
             self._enc = tiktoken.get_encoding("cl100k_base")
         except ImportError:
-            raise ImportError("tiktoken is required for token chunking: pip install tiktoken")
+            raise ImportError(
+                "tiktoken is required for token chunking: pip install tiktoken"
+            )
 
     def chunk(self, text: str, chunk_size: int, overlap: int) -> list[str]:
         tokens = self._enc.encode(text)
@@ -171,18 +177,28 @@ def get_chunking_strategy(name: str | None = None) -> ChunkingStrategy:
     strategy_name = name or os.getenv("CHUNKING_STRATEGY", "word")
     cls = STRATEGIES.get(strategy_name)
     if cls is None:
-        raise ValueError(f"Unknown chunking strategy: '{strategy_name}'. Available: {list(STRATEGIES.keys())}")
+        raise ValueError(
+            f"Unknown chunking strategy: '{strategy_name}'. Available: {list(STRATEGIES.keys())}"
+        )
     return cls()
 
 
 # ---- Public API (backward compatible) ----
 
-def chunk_text(text: str, chunk_size: int = 400, overlap: int = 60, strategy: str | None = None) -> list[str]:
+
+def chunk_text(
+    text: str, chunk_size: int = 400, overlap: int = 60, strategy: str | None = None
+) -> list[str]:
     s = get_chunking_strategy(strategy)
     return s.chunk(text, chunk_size, overlap)
 
 
-def chunk_documents(documents: list[dict], chunk_size: int = 400, overlap: int = 60, strategy: str | None = None) -> list[dict]:
+def chunk_documents(
+    documents: list[dict],
+    chunk_size: int = 400,
+    overlap: int = 60,
+    strategy: str | None = None,
+) -> list[dict]:
     s = get_chunking_strategy(strategy)
     chunked = []
 
@@ -192,7 +208,7 @@ def chunk_documents(documents: list[dict], chunk_size: int = 400, overlap: int =
         for idx, chunk in enumerate(chunks):
             chunked.append(
                 {
-                    "chunk_id": f'{doc["doc_id"]}_chunk_{idx}',
+                    "chunk_id": f"{doc['doc_id']}_chunk_{idx}",
                     "doc_id": doc["doc_id"],
                     "title": doc["title"],
                     "source": doc["source"],

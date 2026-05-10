@@ -4,14 +4,33 @@ from rag.prompting import ABSTENTION_PHRASE
 
 # ---- Stubs ----
 
+
 class FakeRetriever:
     def __init__(self, chunks=None):
-        self._chunks = chunks if chunks is not None else [
-            {"chunk_id": "c1", "doc_id": "d1", "title": "doc.txt", "source": "data/raw/doc.txt",
-             "text": "RAG combines retrieval and generation.", "score": 0.9, "metadata": {}},
-            {"chunk_id": "c2", "doc_id": "d2", "title": "other.txt", "source": "data/raw/other.txt",
-             "text": "Chunking is important for RAG.", "score": 0.7, "metadata": {}},
-        ]
+        self._chunks = (
+            chunks
+            if chunks is not None
+            else [
+                {
+                    "chunk_id": "c1",
+                    "doc_id": "d1",
+                    "title": "doc.txt",
+                    "source": "data/raw/doc.txt",
+                    "text": "RAG combines retrieval and generation.",
+                    "score": 0.9,
+                    "metadata": {},
+                },
+                {
+                    "chunk_id": "c2",
+                    "doc_id": "d2",
+                    "title": "other.txt",
+                    "source": "data/raw/other.txt",
+                    "text": "Chunking is important for RAG.",
+                    "score": 0.7,
+                    "metadata": {},
+                },
+            ]
+        )
 
     def retrieve(self, query, top_k=5):
         return self._chunks[:top_k]
@@ -39,6 +58,7 @@ class FakeQueryRewriter:
 
 # ---- Tests ----
 
+
 class TestRAGPipeline:
     def test_basic_ask(self):
         pipe = RAGPipeline(retriever=FakeRetriever(), generator=FakeGenerator())
@@ -50,7 +70,14 @@ class TestRAGPipeline:
     def test_returns_all_required_keys(self):
         pipe = RAGPipeline(retriever=FakeRetriever(), generator=FakeGenerator())
         result = pipe.ask("What is RAG?")
-        required_keys = {"question", "rewritten_query", "answer", "abstained", "citations", "retrieved_chunks"}
+        required_keys = {
+            "question",
+            "rewritten_query",
+            "answer",
+            "abstained",
+            "citations",
+            "retrieved_chunks",
+        }
         assert required_keys.issubset(result.keys())
 
     def test_citation_extraction(self):
@@ -106,14 +133,22 @@ class TestRAGPipeline:
     def test_reranker_fetches_extra_candidates(self):
         """When reranker is present, pipeline should fetch top_k * 3 candidates."""
         chunks = [
-            {"chunk_id": f"c{i}", "doc_id": f"d{i}", "title": f"doc{i}.txt",
-             "source": f"data/raw/doc{i}.txt", "text": f"Text {i}", "score": 0.9 - i * 0.05, "metadata": {}}
+            {
+                "chunk_id": f"c{i}",
+                "doc_id": f"d{i}",
+                "title": f"doc{i}.txt",
+                "source": f"data/raw/doc{i}.txt",
+                "text": f"Text {i}",
+                "score": 0.9 - i * 0.05,
+                "metadata": {},
+            }
             for i in range(15)
         ]
 
         class TrackingRetriever:
             def __init__(self):
                 self.last_top_k = None
+
             def retrieve(self, query, top_k=5):
                 self.last_top_k = top_k
                 return chunks[:top_k]

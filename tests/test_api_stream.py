@@ -17,7 +17,15 @@ def _make_mock_pipeline():
         metadata = {
             "event": "metadata",
             "rewritten_query": question,
-            "retrieved_chunks": [{"chunk_id": "c1", "doc_id": "d1", "title": "test.txt", "source": "test.txt", "score": 0.9}],
+            "retrieved_chunks": [
+                {
+                    "chunk_id": "c1",
+                    "doc_id": "d1",
+                    "title": "test.txt",
+                    "source": "test.txt",
+                    "score": 0.9,
+                }
+            ],
         }
         yield f"data: {json.dumps(metadata)}\n\n"
         for token in ["Hello", " ", "world"]:
@@ -66,7 +74,11 @@ class TestAskStream:
     def test_emits_token_events(self, client):
         resp = client.post("/ask/stream", json={"question": "What is RAG?"})
         lines = [line for line in resp.text.split("\n") if line.startswith("data:")]
-        token_events = [json.loads(line.removeprefix("data: ")) for line in lines if '"event": "token"' in line]
+        token_events = [
+            json.loads(line.removeprefix("data: "))
+            for line in lines
+            if '"event": "token"' in line
+        ]
         assert len(token_events) == 3
         assert token_events[0]["data"] == "Hello"
         assert token_events[1]["data"] == " "

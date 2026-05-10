@@ -28,9 +28,14 @@ class QueryComplexityClassifier:
     _COMPLEX_INDICATORS = [
         re.compile(r"\b(compare|contrast|difference|versus|vs\.?)\b", re.IGNORECASE),
         re.compile(r"\b(how\s+does|why\s+does|what\s+happens\s+when)\b", re.IGNORECASE),
-        re.compile(r"\b(trade-?off|pros?\s+and\s+cons?|advantage|disadvantage)\b", re.IGNORECASE),
+        re.compile(
+            r"\b(trade-?off|pros?\s+and\s+cons?|advantage|disadvantage)\b",
+            re.IGNORECASE,
+        ),
         re.compile(r"\b(explain|describe|elaborate)\s+.{20,}", re.IGNORECASE),
-        re.compile(r"\b(relationship|correlation|impact|affect|influence)\b", re.IGNORECASE),
+        re.compile(
+            r"\b(relationship|correlation|impact|affect|influence)\b", re.IGNORECASE
+        ),
     ]
 
     _SIMPLE_INDICATORS = [

@@ -8,6 +8,7 @@ from rag.retriever import (
 
 # ---- RRF tests ----
 
+
 class TestReciprocalRankFusion:
     def test_single_list(self):
         results = [
@@ -68,6 +69,7 @@ class TestReciprocalRankFusion:
 
 # ---- Retriever tests with stubs ----
 
+
 class FakeEmbedder:
     def embed_query(self, text):
         return [0.1, 0.2, 0.3]
@@ -92,7 +94,9 @@ class FakeBM25Store:
 class TestDenseRetriever:
     def test_retrieve_returns_results(self):
         results = [{"chunk_id": "c1", "text": "hello", "score": 0.8}]
-        dense = DenseRetriever(embedder=FakeEmbedder(), vector_store=FakeVectorStore(results))
+        dense = DenseRetriever(
+            embedder=FakeEmbedder(), vector_store=FakeVectorStore(results)
+        )
         out = dense.retrieve("query", top_k=1)
         assert len(out) == 1
         assert out[0]["chunk_id"] == "c1"
@@ -117,7 +121,9 @@ class TestHybridRetriever:
             {"chunk_id": "c2", "text": "B", "score": 0.8},
             {"chunk_id": "c3", "text": "C", "score": 0.3},
         ]
-        dense = DenseRetriever(embedder=FakeEmbedder(), vector_store=FakeVectorStore(dense_results))
+        dense = DenseRetriever(
+            embedder=FakeEmbedder(), vector_store=FakeVectorStore(dense_results)
+        )
         sparse = SparseRetriever(bm25_store=FakeBM25Store(sparse_results))
         hybrid = HybridRetriever(dense=dense, sparse=sparse, rrf_k=60)
 
@@ -126,9 +132,17 @@ class TestHybridRetriever:
         assert "c2" in ids  # present in both lists, should rank high
 
     def test_top_k_limits_results(self):
-        dense_results = [{"chunk_id": f"d{i}", "text": f"D{i}", "score": 0.9 - i * 0.1} for i in range(5)]
-        sparse_results = [{"chunk_id": f"s{i}", "text": f"S{i}", "score": 0.9 - i * 0.1} for i in range(5)]
-        dense = DenseRetriever(embedder=FakeEmbedder(), vector_store=FakeVectorStore(dense_results))
+        dense_results = [
+            {"chunk_id": f"d{i}", "text": f"D{i}", "score": 0.9 - i * 0.1}
+            for i in range(5)
+        ]
+        sparse_results = [
+            {"chunk_id": f"s{i}", "text": f"S{i}", "score": 0.9 - i * 0.1}
+            for i in range(5)
+        ]
+        dense = DenseRetriever(
+            embedder=FakeEmbedder(), vector_store=FakeVectorStore(dense_results)
+        )
         sparse = SparseRetriever(bm25_store=FakeBM25Store(sparse_results))
         hybrid = HybridRetriever(dense=dense, sparse=sparse, rrf_k=60)
 

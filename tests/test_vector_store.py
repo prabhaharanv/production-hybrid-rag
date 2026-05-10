@@ -8,9 +8,27 @@ def sample_store():
     store = FaissVectorStore(dim=4)
     vectors = np.array([[1, 0, 0, 0], [0, 1, 0, 0], [0, 0, 1, 0]], dtype="float32")
     records = [
-        {"chunk_id": "c1", "doc_id": "d1", "title": "a", "source": "a.txt", "text": "first"},
-        {"chunk_id": "c2", "doc_id": "d1", "title": "a", "source": "a.txt", "text": "second"},
-        {"chunk_id": "c3", "doc_id": "d2", "title": "b", "source": "b.txt", "text": "third"},
+        {
+            "chunk_id": "c1",
+            "doc_id": "d1",
+            "title": "a",
+            "source": "a.txt",
+            "text": "first",
+        },
+        {
+            "chunk_id": "c2",
+            "doc_id": "d1",
+            "title": "a",
+            "source": "a.txt",
+            "text": "second",
+        },
+        {
+            "chunk_id": "c3",
+            "doc_id": "d2",
+            "title": "b",
+            "source": "b.txt",
+            "text": "third",
+        },
     ]
     store.add(vectors, records)
     return store
