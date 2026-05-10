@@ -3,6 +3,8 @@ flowchart TD
     User([User]) -->|POST /ask| AUTH
     User -->|POST /ask/stream| AUTH
     User -->|Browser| STUI
+    User -->|Document CRUD| AUTH
+    User -->|Conversation API| AUTH
 
     subgraph Security["API Security Layer"]
         direction TB
@@ -13,10 +15,13 @@ flowchart TD
 
     RL --> API[FastAPI Endpoint<br/><i>lifespan managed</i>]
     RL --> STREAM[SSE Stream Endpoint<br/><i>StreamingResponse</i>]
+    RL --> DOC_API[Document Management API<br/><i>upload · list · delete</i>]
+    RL --> CONV_API[Conversation API<br/><i>list · get · clear</i>]
 
     subgraph Pipeline["RAG Pipeline"]
         direction TB
         GRD_IN[Input Guardrails<br/><i>PII · injection</i>]
+        MEM[Conversation Memory<br/><i>sliding window · TTL</i>]
         SCACHE[Semantic Cache<br/><i>embedding similarity</i>]
         QR[Query Rewriter<br/><i>LLM-based</i>]
         HYDE[HyDE Generator<br/><i>hypothetical doc</i>]
@@ -24,14 +29,15 @@ flowchart TD
         HR[Hybrid Retriever]
         COMP[Contextual Compressor<br/><i>LLM + embedding</i>]
         RR[Cross-Encoder Reranker]
-        PB[Prompt Builder]
+        PB[Prompt Builder<br/><i>+ history context</i>]
         GEN[LLM Generator]
         GENS[Streaming Generator<br/><i>token-by-token SSE</i>]
         AB[Abstention Check]
         CE[Citation Extractor]
         GRD_OUT[Output Guardrails<br/><i>toxicity filter</i>]
 
-        GRD_IN -->|clean query| SCACHE
+        GRD_IN -->|clean query| MEM
+        MEM -->|query + history| SCACHE
         SCACHE -->|cache miss| QR
         QR -->|rewritten query| HYDE
         HYDE -->|hypothetical doc| AROUTE
@@ -90,7 +96,7 @@ flowchart TD
     subgraph CICD["CI/CD Pipeline"]
         direction LR
         LINT[Ruff Lint<br/><i>check + format</i>]
-        TEST[Pytest<br/><i>unit tests</i>]
+        TEST[Pytest<br/><i>274 unit tests</i>]
         BUILD[Docker Build<br/><i>GHCR push</i>]
         LINT --> TEST --> BUILD
     end
@@ -191,6 +197,30 @@ flowchart TD
     RAW[/data/raw/] -->|source docs| LOADER
     CHUNKER -.-> ChunkStrats
 
+    subgraph ABTest["A/B Testing Framework"]
+        direction TB
+        EXP[Experiment Config<br/><i>create · stop · delete</i>]
+        ASSIGN[Deterministic Assignment<br/><i>SHA256 hash bucketing</i>]
+        OUTCOME[Outcome Recorder<br/><i>latency · relevance</i>]
+        RESULTS[Results Aggregator<br/><i>per-variant averages</i>]
+        EXP --> ASSIGN
+        ASSIGN --> OUTCOME
+        OUTCOME --> RESULTS
+    end
+
+    subgraph DocMgmt["Document Management"]
+        direction TB
+        UPLOAD[Upload Handler<br/><i>extension whitelist</i>]
+        DLIST[List / Info<br/><i>metadata retrieval</i>]
+        DDEL[Delete Handler<br/><i>path traversal guard</i>]
+    end
+
+    DOC_API -.-> DocMgmt
+    UPLOAD -->|write| RAW
+    DDEL -->|remove| RAW
+    CONV_API -.-> MEM
+    AROUTE -.->|experiment routing| ABTest
+
     CE -.->|pipeline response| BENCH
     FAITH -.-> NLI
     CR -.-> NLI
@@ -226,4 +256,6 @@ flowchart TD
     style ChunkStrats fill:#f5fff0,stroke:#6aaf4a
     style WebUI fill:#fff0ff,stroke:#af4aaf
     style CICD fill:#f0f8ff,stroke:#4a8faf
+    style ABTest fill:#fefff0,stroke:#8faf4a
+    style DocMgmt fill:#f0fffe,stroke:#4aaf8f
 ```
