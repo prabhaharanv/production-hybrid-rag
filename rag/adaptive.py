@@ -29,7 +29,7 @@ class QueryComplexityClassifier:
         re.compile(r"\b(compare|contrast|difference|versus|vs\.?)\b", re.IGNORECASE),
         re.compile(r"\b(how\s+does|why\s+does|what\s+happens\s+when)\b", re.IGNORECASE),
         re.compile(
-            r"\b(trade-?off|pros?\s+and\s+cons?|advantage|disadvantage)\b",
+            r"\b(trade-?offs?|pros?\s+and\s+cons?|advantages?|disadvantages?)\b",
             re.IGNORECASE,
         ),
         re.compile(r"\b(explain|describe|elaborate)\s+.{20,}", re.IGNORECASE),

@@ -152,8 +152,8 @@ class TestRagasFaithfulness:
 @pytest.mark.slow
 class TestContextRecall:
     def test_attributable(self):
-        context = "The cat sat on the mat. It was a sunny day."
-        ground_truth = "The cat sat on the mat."
+        context = "Paris is the capital of France. It is located in Europe."
+        ground_truth = "Paris is in France."
         score = context_recall(ground_truth, context)
         assert 0.0 <= score <= 1.0
         assert score > 0.5
