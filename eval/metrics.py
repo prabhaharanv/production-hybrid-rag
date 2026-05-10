@@ -333,7 +333,7 @@ def hallucination_score(answer: str, context: str) -> dict:
     }
 
     labels = [label_map[int(np.argmax(s))] for s in scores]
-    hallucinated = sum(1 for l in labels if l != "entailed")
+    hallucinated = sum(1 for label in labels if label != "entailed")
     rate = hallucinated / len(claims)
 
     return {

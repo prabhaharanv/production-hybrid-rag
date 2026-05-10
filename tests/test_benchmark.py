@@ -1,4 +1,3 @@
-import pytest
 from eval.benchmark import keyword_recall, source_hit
 
 

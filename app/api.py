@@ -161,7 +161,7 @@ def ask(request: Request, body: AskRequest = Body(...), _api_key: str | None = D
     top_k = body.top_k or settings.top_k
     log.info("request_received", question_len=len(body.question), top_k=top_k)
 
-    with track_request() as m:
+    with track_request():
         with trace_span("ask", {"correlation_id": correlation_id, "top_k": top_k}):
             result = pipeline.ask(body.question, top_k=top_k)
 
@@ -186,7 +186,7 @@ def ask_stream(request: Request, body: AskRequest = Body(...), _api_key: str | N
     log.info("stream_request_received", question_len=len(body.question), top_k=top_k)
 
     def event_generator():
-        with track_request() as m:
+        with track_request():
             with trace_span("ask_stream", {"correlation_id": correlation_id, "top_k": top_k}):
                 yield from pipeline.ask_stream(body.question, top_k=top_k)
 

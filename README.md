@@ -5,7 +5,7 @@ A production-grade Retrieval-Augmented Generation system with hybrid search, cro
 ![Python](https://img.shields.io/badge/Python-3.12-blue)
 ![FastAPI](https://img.shields.io/badge/FastAPI-0.7.0-green)
 ![License](https://img.shields.io/badge/License-MIT-yellow)
-![Tests](https://img.shields.io/badge/Tests-108%20passed-brightgreen)
+![Tests](https://img.shields.io/badge/Tests-230%20passed-brightgreen)
 
 ## Architecture
 
@@ -37,13 +37,19 @@ Question → API Key Auth → Rate Limiter → Query Rewriting → Hybrid Retrie
 - **Observability**: OpenTelemetry tracing, Prometheus metrics, structlog JSON logging with correlation IDs
 - **Monitoring**: Grafana dashboards (latency percentiles, error rates, abstention rate), Prometheus alerting rules
 - **Health checks**: Liveness (`/health`) and deep readiness probes (`/health/ready`) for Kubernetes/load balancers
+- **Guardrails**: PII detection, prompt injection defense, output toxicity filtering
+- **HyDE retrieval**: Hypothetical Document Embeddings for improved recall
+- **Semantic caching**: Embedding-similarity cache with TTL to reduce LLM calls
+- **Adaptive retrieval**: Routes queries to BM25-only, dense-only, or full hybrid based on complexity
+- **Contextual compression**: LLM or embedding-based extraction of relevant sentences from chunks
+- **Parent-child chunking**: Small chunks for retrieval precision, full parent chunks for generation context
 - **Evaluation**: Benchmark suite with keyword recall, source hit rate, and abstention accuracy
 - **Deep evaluation**: Mathematical eval framework — RAGAS (faithfulness, answer relevance, context precision/recall), BERTScore, MRR, NDCG@K, NLI-based hallucination detection
 - **Kubernetes**: Deployment, Service, HPA, ConfigMap, Secrets, PDB, PVCs
 - **Helm chart**: Parameterized chart with dev/staging/prod value overrides
 - **Auto-scaling**: HPA on CPU/memory + custom metrics (p95 latency, in-flight requests via prometheus-adapter)
 - **Load testing**: Locust scripts simulating realistic traffic patterns
-- **Testing**: 83 unit tests across 9 test files (pytest)
+- **Testing**: 230 unit tests across 17 test files (pytest)
 
 ## Project Structure
 
@@ -70,7 +76,13 @@ production-hybrid-rag/
 │   ├── prompting.py        # Prompt with citation + abstention rules
 │   ├── generator.py        # LLM generation + streaming (OpenAI-compatible)
 │   ├── pipeline.py         # Rewrite → Retrieve → Rerank → Generate (sync + stream)
-│   └── ingest.py           # End-to-end ingestion orchestration
+│   ├── ingest.py           # End-to-end ingestion orchestration
+│   ├── hyde.py             # Hypothetical Document Embeddings (HyDE)
+│   ├── cache.py            # Semantic caching with embedding similarity
+│   ├── guardrails.py       # PII detection, prompt injection, toxicity filtering
+│   ├── adaptive.py         # Adaptive retrieval routing by query complexity
+│   ├── compressor.py       # Contextual compression (LLM + embedding-based)
+│   └── parent_child.py     # Parent-child chunking strategy
 ├── ui/
 │   ├── app.py              # Streamlit Web UI (streaming, sources, confidence)
 │   └── requirements.txt
@@ -556,8 +568,15 @@ push/PR to main → lint (ruff) → test (pytest) → build Docker → push to G
 - [x] CI/CD pipeline (GitHub Actions: lint → test → build → push)
 - [x] Web UI (Streamlit with streaming, source panel, confidence indicators)
 
+### Advanced RAG
+- [x] HyDE (Hypothetical Document Embeddings) for improved recall
+- [x] Semantic caching with embedding similarity and TTL
+- [x] Guardrails (PII detection, prompt injection defense, output toxicity filtering)
+- [x] Adaptive retrieval routing (simple → BM25, complex → full hybrid)
+- [x] Contextual compression (LLM-based and embedding-based)
+- [x] Parent-child chunking (small chunks for search, large for generation)
+
 ### Future
-- [ ] Advanced RAG (HyDE, semantic caching, guardrails)
 - [ ] Conversation memory (multi-turn context)
 - [ ] Document management API (upload, list, delete)
 - [ ] A/B testing framework for retrieval strategies

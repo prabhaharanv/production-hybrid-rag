@@ -1,7 +1,7 @@
 """Tests for the /ask/stream SSE endpoint."""
 
 import json
-from unittest.mock import patch, MagicMock
+from unittest.mock import MagicMock
 
 import pytest
 from fastapi.testclient import TestClient
@@ -56,7 +56,7 @@ class TestAskStream:
 
     def test_emits_metadata_event_first(self, client):
         resp = client.post("/ask/stream", json={"question": "What is RAG?"})
-        lines = [l for l in resp.text.split("\n") if l.startswith("data:")]
+        lines = [line for line in resp.text.split("\n") if line.startswith("data:")]
         assert len(lines) >= 1
         first = json.loads(lines[0].removeprefix("data: "))
         assert first["event"] == "metadata"
@@ -65,8 +65,8 @@ class TestAskStream:
 
     def test_emits_token_events(self, client):
         resp = client.post("/ask/stream", json={"question": "What is RAG?"})
-        lines = [l for l in resp.text.split("\n") if l.startswith("data:")]
-        token_events = [json.loads(l.removeprefix("data: ")) for l in lines if '"event": "token"' in l]
+        lines = [line for line in resp.text.split("\n") if line.startswith("data:")]
+        token_events = [json.loads(line.removeprefix("data: ")) for line in lines if '"event": "token"' in line]
         assert len(token_events) == 3
         assert token_events[0]["data"] == "Hello"
         assert token_events[1]["data"] == " "
@@ -74,7 +74,7 @@ class TestAskStream:
 
     def test_emits_done_event_last(self, client):
         resp = client.post("/ask/stream", json={"question": "What is RAG?"})
-        lines = [l for l in resp.text.split("\n") if l.startswith("data:")]
+        lines = [line for line in resp.text.split("\n") if line.startswith("data:")]
         last = json.loads(lines[-1].removeprefix("data: "))
         assert last["event"] == "done"
         assert last["abstained"] is False
@@ -82,7 +82,7 @@ class TestAskStream:
 
     def test_full_text_reconstructed(self, client):
         resp = client.post("/ask/stream", json={"question": "What is RAG?"})
-        lines = [l for l in resp.text.split("\n") if l.startswith("data:")]
+        lines = [line for line in resp.text.split("\n") if line.startswith("data:")]
         tokens = []
         for line in lines:
             evt = json.loads(line.removeprefix("data: "))

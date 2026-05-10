@@ -16,23 +16,35 @@ flowchart TD
 
     subgraph Pipeline["RAG Pipeline"]
         direction TB
+        GRD_IN[Input Guardrails<br/><i>PII · injection</i>]
+        SCACHE[Semantic Cache<br/><i>embedding similarity</i>]
         QR[Query Rewriter<br/><i>LLM-based</i>]
+        HYDE[HyDE Generator<br/><i>hypothetical doc</i>]
+        AROUTE[Adaptive Router<br/><i>complexity-based</i>]
         HR[Hybrid Retriever]
+        COMP[Contextual Compressor<br/><i>LLM + embedding</i>]
         RR[Cross-Encoder Reranker]
         PB[Prompt Builder]
         GEN[LLM Generator]
         GENS[Streaming Generator<br/><i>token-by-token SSE</i>]
         AB[Abstention Check]
         CE[Citation Extractor]
+        GRD_OUT[Output Guardrails<br/><i>toxicity filter</i>]
 
-        QR -->|rewritten query| HR
-        HR -->|3x candidates| RR
+        GRD_IN -->|clean query| SCACHE
+        SCACHE -->|cache miss| QR
+        QR -->|rewritten query| HYDE
+        HYDE -->|hypothetical doc| AROUTE
+        AROUTE -->|route| HR
+        HR -->|3x candidates| COMP
+        COMP -->|compressed| RR
         RR -->|top_k chunks| PB
         PB -->|prompt| GEN
         PB -->|prompt| GENS
         GEN -->|raw answer| AB
         GENS -->|SSE tokens| STREAM
         AB -->|answer| CE
+        CE -->|response| GRD_OUT
     end
 
     subgraph Retrieval["Hybrid Retrieval"]
@@ -65,6 +77,7 @@ flowchart TD
         CS_S[Sentence<br/><i>nltk-style</i>]
         CS_R[Recursive<br/><i>multi-separator</i>]
         CS_T[Token<br/><i>tiktoken cl100k</i>]
+        CS_PC[Parent-Child<br/><i>small search · large context</i>]
     end
 
     subgraph WebUI["Streamlit Web UI"]
@@ -157,10 +170,11 @@ flowchart TD
         end
     end
 
-    API --> QR
-    STREAM --> QR
-    CE -->|response| API
+    API --> GRD_IN
+    STREAM --> GRD_IN
+    GRD_OUT -->|response| API
     GENS -.->|SSE events| STREAM
+    SCACHE -.->|cache hit| API
     API -->|JSON response| User
     STREAM -->|SSE stream| User
 

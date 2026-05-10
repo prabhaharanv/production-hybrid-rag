@@ -39,18 +39,6 @@ with st.sidebar:
 st.title("🔍 Production Hybrid RAG")
 st.caption("Ask questions about your documents — answers are grounded in retrieved context with citations.")
 
-# Chat history
-if "messages" not in st.session_state:
-    st.session_state.messages = []
-
-# Display chat history
-for msg in st.session_state.messages:
-    with st.chat_message(msg["role"]):
-        st.markdown(msg["content"])
-        if msg.get("metadata"):
-            _display_confidence(msg["metadata"])
-
-
 def _build_headers() -> dict:
     headers = {"Content-Type": "application/json"}
     if api_key:
@@ -82,6 +70,18 @@ def _display_confidence(metadata: dict):
 
     with col3:
         st.metric("Sources", len(chunks))
+
+
+# Chat history
+if "messages" not in st.session_state:
+    st.session_state.messages = []
+
+# Display chat history
+for msg in st.session_state.messages:
+    with st.chat_message(msg["role"]):
+        st.markdown(msg["content"])
+        if msg.get("metadata"):
+            _display_confidence(msg["metadata"])
 
 
 def _display_sources(chunks: list[dict], citations: list[dict]):

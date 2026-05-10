@@ -1,4 +1,3 @@
-import pytest
 from rag.prompting import build_rag_prompt, ABSTENTION_PHRASE
 
 

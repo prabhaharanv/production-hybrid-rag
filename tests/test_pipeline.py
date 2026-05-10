@@ -1,4 +1,3 @@
-import pytest
 from rag.pipeline import RAGPipeline
 from rag.prompting import ABSTENTION_PHRASE
 

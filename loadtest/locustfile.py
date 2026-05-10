@@ -20,7 +20,7 @@ Usage:
 import os
 import random
 
-from locust import HttpUser, task, between, tag, events
+from locust import HttpUser, task, between, tag
 
 
 # Sample questions spanning different topics and complexity levels

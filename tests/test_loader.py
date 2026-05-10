@@ -1,5 +1,3 @@
-import pytest
-import tempfile
 from pathlib import Path
 from unittest.mock import patch, MagicMock
 from rag.loader import load_documents, _load_pdf, _load_html, _load_docx
@@ -150,5 +148,5 @@ class TestLoadDocx:
             assert "Content" in result
             assert "More content" in result
             # Empty paragraph should not appear
-            lines = [l for l in result.split("\n\n") if l.strip()]
+            lines = [line for line in result.split("\n\n") if line.strip()]
             assert len(lines) == 2

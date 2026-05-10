@@ -25,3 +25,6 @@ opentelemetry-instrumentation-fastapi==0.54b0
 opentelemetry-exporter-otlp==1.33.0
 prometheus-client==0.22.1
 structlog==25.4.0
+
+# Semantic caching (optional)
+redis>=5.0.0

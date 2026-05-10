@@ -7,7 +7,6 @@ with latency per step. Exports spans via OTLP to a collector (Jaeger/Tempo).
 
 import time
 from contextlib import contextmanager
-from functools import wraps
 
 from opentelemetry import trace
 from opentelemetry.sdk.trace import TracerProvider

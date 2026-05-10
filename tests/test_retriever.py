@@ -1,4 +1,3 @@
-import pytest
 from rag.retriever import (
     DenseRetriever,
     SparseRetriever,
