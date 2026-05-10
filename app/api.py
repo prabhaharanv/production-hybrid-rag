@@ -2,7 +2,16 @@ from contextlib import asynccontextmanager
 import os
 
 import structlog
-from fastapi import FastAPI, HTTPException, Request, Security, Depends, Body
+from fastapi import (
+    FastAPI,
+    HTTPException,
+    Request,
+    Security,
+    Depends,
+    Body,
+    UploadFile,
+    File,
+)
 from fastapi.security import APIKeyHeader
 from slowapi import Limiter
 from slowapi.util import get_remote_address
@@ -23,6 +32,8 @@ from rag.reranker import Reranker
 from rag.query_rewriter import QueryRewriter
 from rag.generator import LLMGenerator
 from rag.pipeline import RAGPipeline
+from rag.documents import DocumentManager
+from rag.memory import ConversationMemory
 
 # ---- Rate limiter ----
 limiter = Limiter(key_func=get_remote_address)
@@ -32,6 +43,15 @@ api_key_header = APIKeyHeader(name="X-API-Key", auto_error=False)
 
 # ---- Health checker ----
 health_checker = HealthChecker()
+
+# ---- Document manager ----
+doc_manager = DocumentManager(settings.raw_data_dir)
+
+# ---- Conversation memory ----
+memory = ConversationMemory(
+    max_turns=settings.memory_max_turns,
+    ttl=settings.memory_ttl,
+)
 
 
 def verify_api_key(api_key: str | None = Security(api_key_header)) -> str | None:
@@ -173,7 +193,12 @@ def ask(
 
     with track_request():
         with trace_span("ask", {"correlation_id": correlation_id, "top_k": top_k}):
-            result = pipeline.ask(body.question, top_k=top_k)
+            result = pipeline.ask(
+                body.question,
+                top_k=top_k,
+                conversation_id=body.conversation_id,
+                memory=memory if settings.enable_conversation_memory else None,
+            )
 
     return result
 
@@ -208,3 +233,77 @@ def ask_stream(
                 yield from pipeline.ask_stream(body.question, top_k=top_k)
 
     return StreamingResponse(event_generator(), media_type="text/event-stream")
+
+
+# ---- Document management endpoints ----
+
+
+@app.get("/documents")
+def list_documents(_api_key: str | None = Depends(verify_api_key)):
+    """List all documents in the raw store."""
+    return doc_manager.list_documents()
+
+
+@app.post("/documents", status_code=201)
+async def upload_document(
+    file: UploadFile = File(...),
+    _api_key: str | None = Depends(verify_api_key),
+):
+    """Upload a document to the raw store."""
+    content = await file.read()
+    try:
+        result = doc_manager.save_document(file.filename, content)
+    except ValueError as e:
+        raise HTTPException(status_code=400, detail=str(e))
+    return result
+
+
+@app.get("/documents/{filename}")
+def get_document_info(filename: str, _api_key: str | None = Depends(verify_api_key)):
+    """Get metadata for a specific document."""
+    info = doc_manager.get_document_info(filename)
+    if info is None:
+        raise HTTPException(status_code=404, detail="Document not found")
+    return info
+
+
+@app.delete("/documents/{filename}")
+def delete_document(filename: str, _api_key: str | None = Depends(verify_api_key)):
+    """Delete a document from the raw store."""
+    deleted = doc_manager.delete_document(filename)
+    if not deleted:
+        raise HTTPException(status_code=404, detail="Document not found")
+    return {"deleted": filename}
+
+
+# ---- Conversation memory endpoints ----
+
+
+@app.get("/conversations")
+def list_conversations(_api_key: str | None = Depends(verify_api_key)):
+    """List active conversations."""
+    return memory.list_conversations()
+
+
+@app.get("/conversations/{conversation_id}")
+def get_conversation(
+    conversation_id: str, _api_key: str | None = Depends(verify_api_key)
+):
+    """Get the history for a conversation."""
+    turns = memory.get_history(conversation_id)
+    return {
+        "conversation_id": conversation_id,
+        "turns": [
+            {"question": t.question, "answer": t.answer, "timestamp": t.timestamp}
+            for t in turns
+        ],
+    }
+
+
+@app.delete("/conversations/{conversation_id}")
+def clear_conversation(
+    conversation_id: str, _api_key: str | None = Depends(verify_api_key)
+):
+    """Clear a conversation's history."""
+    memory.clear(conversation_id)
+    return {"cleared": conversation_id}

@@ -5,7 +5,7 @@ A production-grade Retrieval-Augmented Generation system with hybrid search, cro
 ![Python](https://img.shields.io/badge/Python-3.12-blue)
 ![FastAPI](https://img.shields.io/badge/FastAPI-0.7.0-green)
 ![License](https://img.shields.io/badge/License-MIT-yellow)
-![Tests](https://img.shields.io/badge/Tests-230%20passed-brightgreen)
+![Tests](https://img.shields.io/badge/Tests-274%20passed-brightgreen)
 
 ## Architecture
 
@@ -49,7 +49,7 @@ Question → API Key Auth → Rate Limiter → Query Rewriting → Hybrid Retrie
 - **Helm chart**: Parameterized chart with dev/staging/prod value overrides
 - **Auto-scaling**: HPA on CPU/memory + custom metrics (p95 latency, in-flight requests via prometheus-adapter)
 - **Load testing**: Locust scripts simulating realistic traffic patterns
-- **Testing**: 230 unit tests across 17 test files (pytest)
+- **Testing**: 274 unit tests across 20 test files (pytest)
 
 ## Project Structure
 
@@ -82,7 +82,10 @@ production-hybrid-rag/
 │   ├── guardrails.py       # PII detection, prompt injection, toxicity filtering
 │   ├── adaptive.py         # Adaptive retrieval routing by query complexity
 │   ├── compressor.py       # Contextual compression (LLM + embedding-based)
-│   └── parent_child.py     # Parent-child chunking strategy
+│   ├── parent_child.py     # Parent-child chunking strategy
+│   ├── memory.py           # Conversation memory (multi-turn sliding window)
+│   ├── documents.py        # Document management (upload, list, delete)
+│   └── ab_testing.py       # A/B testing framework for retrieval strategies
 ├── ui/
 │   ├── app.py              # Streamlit Web UI (streaming, sources, confidence)
 │   └── requirements.txt
@@ -576,7 +579,7 @@ push/PR to main → lint (ruff) → test (pytest) → build Docker → push to G
 - [x] Contextual compression (LLM-based and embedding-based)
 - [x] Parent-child chunking (small chunks for search, large for generation)
 
-### Future
-- [ ] Conversation memory (multi-turn context)
-- [ ] Document management API (upload, list, delete)
-- [ ] A/B testing framework for retrieval strategies
+### Conversation & Management
+- [x] Conversation memory (multi-turn context with sliding window)
+- [x] Document management API (upload, list, delete)
+- [x] A/B testing framework for retrieval strategies

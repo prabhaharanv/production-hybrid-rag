@@ -3,6 +3,7 @@ import re
 from collections.abc import Generator
 
 from rag.prompting import build_rag_prompt, ABSTENTION_PHRASE
+from rag.memory import ConversationMemory, build_history_context
 from app.observability.tracing import trace_span
 from app.observability.metrics import get_metrics, track_step
 from app.observability.logging import get_logger
@@ -28,9 +29,21 @@ class RAGPipeline:
         self.compressor = compressor
         self.log = get_logger("rag.pipeline")
 
-    def ask(self, question: str, top_k: int = 5) -> dict:
+    def ask(
+        self,
+        question: str,
+        top_k: int = 5,
+        conversation_id: str | None = None,
+        memory: ConversationMemory | None = None,
+    ) -> dict:
         metrics = get_metrics()
         log = self.log.bind(question_len=len(question), top_k=top_k)
+
+        # Step 0: Conversation history
+        history_context = ""
+        if memory and conversation_id:
+            turns = memory.get_history(conversation_id)
+            history_context = build_history_context(turns)
 
         # Step 0: Input guardrails
         if self.guardrails:
@@ -99,6 +112,8 @@ class RAGPipeline:
 
         # Step 4: Generate answer
         prompt = build_rag_prompt(question, retrieved_chunks)
+        if history_context:
+            prompt = history_context + "\n" + prompt
         with trace_span("generate", {"prompt_len": len(prompt)}) as span:
             with track_step("generate"):
                 answer = self.generator.generate(prompt)
@@ -161,6 +176,10 @@ class RAGPipeline:
         # Cache the result
         if self.cache and not result.get("abstained"):
             self.cache.put(question, result)
+
+        # Record turn in conversation memory
+        if memory and conversation_id and not result.get("abstained"):
+            memory.add_turn(conversation_id, question, result["answer"])
 
         return result
 

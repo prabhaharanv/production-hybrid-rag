@@ -56,5 +56,12 @@ class Settings(BaseModel):
         "COMPRESSION_TYPE", "embedding"
     )  # "llm" or "embedding"
 
+    # Conversation memory
+    enable_conversation_memory: bool = (
+        os.getenv("ENABLE_CONVERSATION_MEMORY", "false").lower() == "true"
+    )
+    memory_max_turns: int = int(os.getenv("MEMORY_MAX_TURNS", "5"))
+    memory_ttl: int = int(os.getenv("MEMORY_TTL", "3600"))
+
 
 settings = Settings()

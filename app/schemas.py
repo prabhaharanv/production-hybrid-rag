@@ -5,6 +5,7 @@ from typing import List, Dict, Any
 class AskRequest(BaseModel):
     question: str
     top_k: int | None = None
+    conversation_id: str | None = None
 
 
 class RetrievedChunk(BaseModel):
