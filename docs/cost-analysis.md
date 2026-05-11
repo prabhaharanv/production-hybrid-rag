@@ -11,7 +11,7 @@ A single `/ask` request consumes tokens at multiple pipeline stages:
 │ Stage              │ Input Tokens    │ Output Tokens │ Model     │
 ├────────────────────┼─────────────────┼───────────────┼───────────┤
 │ Query Rewriting    │ ~100            │ ~30           │ LLM       │
-│ HyDE Generation   │ ~120            │ ~150          │ LLM       │
+│ HyDE Generation    │ ~120            │ ~150          │ LLM       │
 │ Final Generation   │ ~800–2000       │ ~200–500      │ LLM       │
 │ Contextual Compress│ ~1500           │ ~300          │ LLM       │
 └────────────────────┴─────────────────┴───────────────┴───────────┘
