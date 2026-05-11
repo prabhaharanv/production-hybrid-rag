@@ -7,7 +7,7 @@
 A single `/ask` request consumes tokens at multiple pipeline stages:
 
 ```
-┌─────────────────────────────────────────────────────────────────┐
+┌──────────────────────────────────────────────────────────────────┐
 │ Stage              │ Input Tokens    │ Output Tokens │ Model     │
 ├────────────────────┼─────────────────┼───────────────┼───────────┤
 │ Query Rewriting    │ ~100            │ ~30           │ LLM       │
